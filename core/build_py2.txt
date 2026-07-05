@@ -1,8 +1,0 @@
-MSBuild version 17.14.23+b0019275e for .NET Framework
-
-  caption_engine.vcxproj -> E:\Ai\ComfyUI\ComfyUI\custom_nodes\caption-live\caption_engine_cpp\build\lib\Release\caption_engine.lib
-  python_bindings.cpp
-     Creating library E:/Ai/ComfyUI/ComfyUI/custom_nodes/caption-live/caption_engine_cpp/build/lib/Release/caption_engine_py.lib and object E:/Ai/ComfyUI/ComfyUI/custom_nodes/caption-live/caption_engine_cpp/build/lib/Release/caption_engine_py.exp
-  Generating code
-  Finished generating code
-  caption_engine_py.vcxproj -> E:\Ai\ComfyUI\ComfyUI\custom_nodes\caption-live\caption_engine_cpp\build\lib\Release\caption_engine_py.cp313-win_amd64.pyd

@@ -1,8 +1,0 @@
-MSBuild version 17.14.23+b0019275e for .NET Framework
-
-template.obj : warning LNK4006: "public: static struct CaptionEngine::Template __cdecl CaptionEngine::Template::from_json(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)" (?from_json@Template@CaptionEngine@@SA?AU12@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z) already defined in template_parser.obj; second definition ignored [E:\Ai\ComfyUI\ComfyUI\custom_nodes\caption-live\core\build\caption_engine.vcxproj]
-template.obj : warning LNK4006: "public: class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > __cdecl CaptionEngine::Template::to_json(void)const " (?to_json@Template@CaptionEngine@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ) already defined in template_parser.obj; second definition ignored [E:\Ai\ComfyUI\ComfyUI\custom_nodes\caption-live\core\build\caption_engine.vcxproj]
-  caption_engine.vcxproj -> E:\Ai\ComfyUI\ComfyUI\custom_nodes\caption-live\core\build\lib\Release\caption_engine.lib
-  unified_bindings.cpp
-E:\Ai\ComfyUI\ComfyUI\custom_nodes\caption-live\core\src\bindings\unified_bindings.cpp(173,1): error C2059: syntax error: '}' [E:\Ai\ComfyUI\ComfyUI\custom_nodes\caption-live\core\build\caption_engine_unified.vcxproj]
-E:\Ai\ComfyUI\ComfyUI\custom_nodes\caption-live\core\src\bindings\unified_bindings.cpp(173,1): error C2143: syntax error: missing ';' before '}' [E:\Ai\ComfyUI\ComfyUI\custom_nodes\caption-live\core\build\caption_engine_unified.vcxproj]

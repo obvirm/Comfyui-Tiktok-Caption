@@ -1,6 +1,6 @@
 """
-Caption Live - ComfyUI Custom Node
-C++ powered caption effects.
+Takumi Caption - ComfyUI Custom Node
+Rust/WASM powered caption effects.
 """
 import os
 import sys
@@ -10,18 +10,18 @@ current_dir = os.path.dirname(__file__)
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
-from .caption_live import CaptionLiveNode
+from .py.takumi_caption_node import TakumiCaptionNode
 
 NODE_CLASS_MAPPINGS = {
-    "CaptionLiveNode": CaptionLiveNode,
+    "TakumiCaptionNode": TakumiCaptionNode
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "CaptionLiveNode": "Caption Live",
+    "TakumiCaptionNode": "Takumi Caption (TikTok Style)"
 }
 
 WEB_DIRECTORY = "web"
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
 
-print("✅ Caption Live Loaded!")
+print("✅ Takumi Caption Loaded!")
