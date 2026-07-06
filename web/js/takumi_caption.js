@@ -193,21 +193,26 @@ app.registerExtension({
                             }
                             const lines = textToRender.split('\n');
 
-                            const makeTextChildren = (lineArr, color) => {
+                            const makeTextChildren = (lineArr, color, isFirstLineActive) => {
                                 return lineArr.map((line, i) => {
-                                    if (i === 0 && line.includes(' ')) {
-                                        const parts = line.split(' ');
-                                        const first = parts.shift();
-                                        return {
-                                            type: "container",
-                                            style: { display: "flex", flexDirection: "row", gap: "10px" },
-                                            children: [
-                                                { type: "text", style: { color: color }, text: first },
-                                                { type: "text", style: { color: color }, text: parts.join(' ') }
-                                            ]
-                                        };
-                                    }
-                                    return { type: "text", style: { color: color }, text: line };
+                                    const words = line.split(' ');
+                                    const wordNodes = words.map((word, j) => {
+                                        const isActive = isFirstLineActive && i === 0 && j === 0;
+                                        const style = isActive ? {
+                                            color: data.active_word_color,
+                                            transform: `scale(${data.active_scale}) rotate(${data.active_rotation}deg) skewX(${data.active_skew}deg)`,
+                                            filter: data.active_glow_intensity > 0 ? `drop-shadow(0 0 ${data.active_glow_intensity}px ${data.active_glow_color})` : "none",
+                                            backgroundColor: data.active_bg_color,
+                                            borderRadius: data.active_bg_radius + "px",
+                                            padding: data.active_bg_color !== "transparent" ? "2px 8px" : "0",
+                                        } : { color: color };
+                                        return { type: "text", style: style, text: word };
+                                    });
+                                    return {
+                                        type: "container",
+                                        style: { display: "flex", flexDirection: "row", flexWrap: "wrap", gap: "8px", justifyContent: "inherit" },
+                                        children: wordNodes
+                                    };
                                 });
                             };
 
@@ -232,7 +237,7 @@ app.registerExtension({
                             const strokeAST = {
                                 type: "container",
                                 style: { ...baseStyle, color: data.stroke_color, WebkitTextStrokeWidth: data.stroke_width + "px", WebkitTextStrokeColor: data.stroke_color },
-                                children: makeTextChildren(lines, data.stroke_color)
+                                children: makeTextChildren(lines, data.stroke_color, false)
                             };
                             const strokeSvg = takumiRenderer.renderSvg(strokeAST, { width: W, height: H });
 
@@ -247,19 +252,17 @@ app.registerExtension({
                             };
 
                             const fillChildren = lines.map((line, i) => {
-                                if (i === 0 && line.includes(' ')) {
-                                    const parts = line.split(' ');
-                                    const first = parts.shift();
-                                    return {
-                                        type: "container",
-                                        style: { display: "flex", flexDirection: "row", gap: "10px", alignItems: "center" },
-                                        children: [
-                                            { type: "text", style: activeStyle, text: first },
-                                            { type: "text", style: { color: data.font_color }, text: parts.join(' ') }
-                                        ]
-                                    };
-                                }
-                                return { type: "text", style: { color: data.font_color }, text: line };
+                                const words = line.split(' ');
+                                const wordNodes = words.map((word, j) => {
+                                    const isActive = i === 0 && j === 0;
+                                    const style = isActive ? activeStyle : { color: data.font_color };
+                                    return { type: "text", style: style, text: word };
+                                });
+                                return {
+                                    type: "container",
+                                    style: { display: "flex", flexDirection: "row", flexWrap: "wrap", gap: "8px", justifyContent: "inherit" },
+                                    children: wordNodes
+                                };
                             });
 
                             const fillAST = {
@@ -274,7 +277,7 @@ app.registerExtension({
                             const shadowAST = {
                                 type: "container",
                                 style: { ...baseStyle, color: shadowColor },
-                                children: makeTextChildren(lines, shadowColor)
+                                children: makeTextChildren(lines, shadowColor, false)
                             };
                             const shadowSvg = takumiRenderer.renderSvg(shadowAST, { width: W, height: H });
 
