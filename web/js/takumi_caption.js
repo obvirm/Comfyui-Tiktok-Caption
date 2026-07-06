@@ -198,15 +198,29 @@ app.registerExtension({
                                     const words = line.split(' ');
                                     const wordNodes = words.map((word, j) => {
                                         const isActive = isFirstLineActive && i === 0 && j === 0;
-                                        const style = isActive ? {
-                                            color: data.active_word_color,
-                                            transform: `scale(${data.active_scale}) rotate(${data.active_rotation}deg) skewX(${data.active_skew}deg)`,
-                                            filter: data.active_glow_intensity > 0 ? `drop-shadow(0 0 ${data.active_glow_intensity}px ${data.active_glow_color})` : "none",
-                                            backgroundColor: data.active_bg_color,
-                                            borderRadius: data.active_bg_radius + "px",
-                                            padding: data.active_bg_color !== "transparent" ? "2px 8px" : "0",
-                                        } : { color: color };
-                                        return { type: "text", style: style, text: word };
+                                        if (isActive) {
+                                            // Active word: wrap in container with background
+                                            const textStyle = {
+                                                color: data.active_word_color,
+                                                transform: `scale(${data.active_scale}) rotate(${data.active_rotation}deg) skewX(${data.active_skew}deg)`,
+                                                filter: data.active_glow_intensity > 0 ? `drop-shadow(0 0 ${data.active_glow_intensity}px ${data.active_glow_color})` : "none",
+                                            };
+                                            const hasBg = data.active_bg_color !== "transparent";
+                                            if (hasBg) {
+                                                return {
+                                                    type: "container",
+                                                    style: {
+                                                        backgroundColor: data.active_bg_color,
+                                                        borderRadius: data.active_bg_radius + "px",
+                                                        padding: "4px 10px",
+                                                        display: "inline-flex",
+                                                    },
+                                                    children: [{ type: "text", style: textStyle, text: word }]
+                                                };
+                                            }
+                                            return { type: "text", style: textStyle, text: word };
+                                        }
+                                        return { type: "text", style: { color: color }, text: word };
                                     });
                                     return {
                                         type: "container",
@@ -242,21 +256,32 @@ app.registerExtension({
                             const strokeSvg = takumiRenderer.renderSvg(strokeAST, { width: W, height: H });
 
                             // SVG 2: Fill only (putih/highlight, tanpa stroke)
-                            const activeStyle = {
-                                color: data.active_word_color,
-                                transform: `scale(${data.active_scale}) rotate(${data.active_rotation}deg) skewX(${data.active_skew}deg)`,
-                                filter: data.active_glow_intensity > 0 ? `drop-shadow(0 0 ${data.active_glow_intensity}px ${data.active_glow_color})` : "none",
-                                backgroundColor: data.active_bg_color,
-                                borderRadius: data.active_bg_radius + "px",
-                                padding: data.active_bg_color !== "transparent" ? "2px 8px" : "0",
-                            };
-
                             const fillChildren = lines.map((line, i) => {
                                 const words = line.split(' ');
                                 const wordNodes = words.map((word, j) => {
                                     const isActive = i === 0 && j === 0;
-                                    const style = isActive ? activeStyle : { color: data.font_color };
-                                    return { type: "text", style: style, text: word };
+                                    if (isActive) {
+                                        const textStyle = {
+                                            color: data.active_word_color,
+                                            transform: `scale(${data.active_scale}) rotate(${data.active_rotation}deg) skewX(${data.active_skew}deg)`,
+                                            filter: data.active_glow_intensity > 0 ? `drop-shadow(0 0 ${data.active_glow_intensity}px ${data.active_glow_color})` : "none",
+                                        };
+                                        const hasBg = data.active_bg_color !== "transparent";
+                                        if (hasBg) {
+                                            return {
+                                                type: "container",
+                                                style: {
+                                                    backgroundColor: data.active_bg_color,
+                                                    borderRadius: data.active_bg_radius + "px",
+                                                    padding: "4px 10px",
+                                                    display: "inline-flex",
+                                                },
+                                                children: [{ type: "text", style: textStyle, text: word }]
+                                            };
+                                        }
+                                        return { type: "text", style: textStyle, text: word };
+                                    }
+                                    return { type: "text", style: { color: data.font_color }, text: word };
                                 });
                                 return {
                                     type: "container",
