@@ -205,9 +205,18 @@ app.registerExtension({
                             };
                             const fillSvg = takumiRenderer.renderSvg(fillAST, { width: W, height: H });
 
-                            // Composite: stroke SVG di belakang, fill SVG di depan
+                            // SVG 3: Shadow (text hitam, offset, untuk efek drop shadow)
+                            const shadowAST = {
+                                type: "container",
+                                style: { ...baseStyle, color: "rgba(0,0,0,0.5)" },
+                                children: makeTextChildren(lines, "rgba(0,0,0,0.5)")
+                            };
+                            const shadowSvg = takumiRenderer.renderSvg(shadowAST, { width: W, height: H });
+
+                            // Composite: shadow (paling belakang) → stroke → fill (paling depan)
                             this.takumiPreviewEl.innerHTML = `
                                 <div style="position:relative;width:100%;height:100%;">
+                                    <div style="position:absolute;top:3%;left:3%;width:100%;height:100%;z-index:0;filter:blur(4px);opacity:0.6;">${shadowSvg}</div>
                                     <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;">${strokeSvg}</div>
                                     <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;">${fillSvg}</div>
                                 </div>
