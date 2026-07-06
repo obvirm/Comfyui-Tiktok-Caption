@@ -338,33 +338,16 @@ app.registerExtension({
                             const sb = data.shadow_blur || 0;
                             const blurFilter = sb > 0 ? `filter:blur(${sb}px);` : "";
 
-                            // SVG 4: Active Background (paling belakang, di belakang shadow)
-                            let bgSvg = "";
+                            // Active Background: gunakan HTML div biasa, bukan SVG
+                            let bgHtml = "";
                             if (data.active_bg_color !== "transparent") {
-                                const firstLine = lines[0] || "";
-                                const firstWord = firstLine.split(" ")[0] || "";
-                                if (firstWord) {
-                                    const bgAST = {
-                                        type: "container",
-                                        style: {
-                                            ...baseStyle,
-                                            color: "transparent",
-                                        },
-                                        children: [{
-                                            type: "container",
-                                            style: {
-                                                backgroundColor: data.active_bg_color,
-                                                borderRadius: data.active_bg_radius + "px",
-                                                padding: "6px 14px",
-                                                display: "inline-flex",
-                                                alignSelf: baseStyle.alignItems,
-                                                justifySelf: baseStyle.justifyContent,
-                                            },
-                                            children: [{ type: "text", style: { color: "transparent" }, text: firstWord }]
-                                        }]
-                                    };
-                                    bgSvg = takumiRenderer.renderSvg(bgAST, { width: W, height: H });
-                                }
+                                const alignH = data.alignment || "center";
+                                const alignV = data.vertical_align || "center";
+                                const leftMap = { "left": "5%", "center": "50%", "right": "95%" };
+                                const topMap = { "top": "5%", "center": "50%", "bottom": "95%" };
+                                const x = leftMap[alignH] || "50%";
+                                const y = topMap[alignV] || "50%";
+                                bgHtml = `<div style="position:absolute;left:${x};top:${y};transform:translate(-50%,-50%);background:${data.active_bg_color};border-radius:${data.active_bg_radius}px;padding:6px 14px;z-index:-1;white-space:nowrap;">&nbsp;</div>`;
                             }
 
                             // Build animation styles
@@ -404,7 +387,7 @@ app.registerExtension({
                             this.takumiPreviewEl.innerHTML = `
                                 <style>${animStyle}</style>
                                 <div style="position:relative;width:100%;height:100%;transform:translate(${px}%,${py}%);">
-                                    ${bgSvg ? `<div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:-1;">${bgSvg}</div>` : ""}
+                                    ${bgHtml}
                                     <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;transform:translate(${sx}px,${sy}px);${blurFilter}${shadowAnim}">${shadowSvg}</div>
                                     <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;${strokeAnim}">${strokeSvg}</div>
                                     <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;${fillAnim}">${fillSvg}</div>
