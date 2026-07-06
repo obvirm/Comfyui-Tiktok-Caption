@@ -12,7 +12,13 @@ class TakumiCaptionNode:
         return {
             "required": {
                 "text": ("STRING", {"multiline": True, "default": "Wah, gila banget nih!\nRender real-time pakai WASM\nGaya TikTok kekinian"}),
+                "font_family": ("STRING", {"default": "Inter, sans-serif"}),
                 "font_size": ("INT", {"default": 48, "min": 10, "max": 200}),
+                "letter_spacing": ("INT", {"default": 0, "min": -10, "max": 20, "step": 1}),
+                "line_height": ("FLOAT", {"default": 1.2, "min": 0.5, "max": 3.0, "step": 0.1}),
+                "max_words_per_line": ("INT", {"default": 0, "min": 0, "max": 50, "step": 1}),
+                "max_lines_per_page": ("INT", {"default": 0, "min": 0, "max": 20, "step": 1}),
+                "animation": (["None", "Word Pop", "Bounce", "Scale In", "Fade In"], {"default": "None"}),
                 "font_color": ("STRING", {"default": "#FFFFFF"}),
                 "stroke_color": ("STRING", {"default": "#000000"}),
                 "stroke_width": ("INT", {"default": 4, "min": 0, "max": 20}),
@@ -31,7 +37,7 @@ class TakumiCaptionNode:
     FUNCTION = "render_caption"
     CATEGORY = "image/text"
 
-    def _build_takumi_ast(self, text, font_size, font_color, stroke_color, stroke_width, highlight_color):
+    def _build_takumi_ast(self, text, font_family, font_size, letter_spacing, line_height, font_color, stroke_color, stroke_width, highlight_color):
         """Membangun AST JSON murni sesuai spek struktur Takumi."""
         lines = text.split('\n')
         
@@ -60,9 +66,11 @@ class TakumiCaptionNode:
                 "justifyContent": "center",
                 "width": "100%",
                 "height": "100%",
-                "fontFamily": "'Proxima Nova', sans-serif",
+                "fontFamily": font_family,
                 "fontSize": f"{font_size}px",
                 "fontWeight": "bold",
+                "letterSpacing": f"{letter_spacing}px",
+                "lineHeight": str(line_height),
                 "textTransform": "uppercase",
                 "color": font_color,
                 "WebkitTextStrokeWidth": f"{stroke_width}px",
@@ -72,9 +80,28 @@ class TakumiCaptionNode:
             "children": children
         }
 
-    def render_caption(self, text, font_size, font_color, stroke_color, stroke_width, width, height, highlight_color):
+    def _wrap_text(self, text, max_words_per_line, max_lines_per_page):
+        if max_words_per_line <= 0 and max_lines_per_page <= 0:
+            return text
+        lines = text.split('\n')
+        result = []
+        for line in lines:
+            words = line.split(' ')
+            if max_words_per_line > 0 and len(words) > max_words_per_line:
+                chunks = []
+                for i in range(0, len(words), max_words_per_line):
+                    chunks.append(' '.join(words[i:i + max_words_per_line]))
+                result.extend(chunks)
+            else:
+                result.append(line)
+        if max_lines_per_page > 0 and len(result) > max_lines_per_page:
+            result = result[:max_lines_per_page]
+        return '\n'.join(result)
+
+    def render_caption(self, text, font_family, font_size, letter_spacing, line_height, max_words_per_line, max_lines_per_page, animation, font_color, stroke_color, stroke_width, width, height, shadow_color, shadow_blur, shadow_offset_x, shadow_offset_y, highlight_color):
         
-        takumi_ast = self._build_takumi_ast(text, font_size, font_color, stroke_color, stroke_width, highlight_color)
+        text = self._wrap_text(text, max_words_per_line, max_lines_per_page)
+        takumi_ast = self._build_takumi_ast(text, font_family, font_size, letter_spacing, line_height, font_color, stroke_color, stroke_width, highlight_color)
         fallback_used = False
         
         # 1. Tentukan path executable murni CLI Takumi

@@ -119,6 +119,12 @@ app.registerExtension({
 
                     const data = {
                         text: getVal("text") || "Wah, gila banget nih!\nRender real-time pakai WASM\nGaya TikTok kekinian",
+                        font_family: getVal("font_family") || "Inter, sans-serif",
+                        font_size: getVal("font_size") || 48,
+                        letter_spacing: getVal("letter_spacing") || 0,
+                        line_height: getVal("line_height") || 1.2,
+                        max_words_per_line: getVal("max_words_per_line") || 0,
+                        max_lines_per_page: getVal("max_lines_per_page") || 0,
                         font_size: getVal("font_size") || 48,
                         font_color: getVal("font_color") || "#FFFFFF",
                         stroke_color: getVal("stroke_color") || "#000000",
@@ -148,7 +154,27 @@ app.registerExtension({
                         try {
                             const W = data.width;
                             const H = data.height;
-                            const lines = data.text.split('\n');
+                            // Wrap text based on max_words_per_line
+                            let textToRender = data.text;
+                            if (data.max_words_per_line > 0) {
+                                const rawLines = data.text.split('\n');
+                                const wrappedLines = [];
+                                for (const line of rawLines) {
+                                    const words = line.split(' ');
+                                    if (words.length > data.max_words_per_line) {
+                                        for (let i = 0; i < words.length; i += data.max_words_per_line) {
+                                            wrappedLines.push(words.slice(i, i + data.max_words_per_line).join(' '));
+                                        }
+                                    } else {
+                                        wrappedLines.push(line);
+                                    }
+                                }
+                                textToRender = wrappedLines.join('\n');
+                            }
+                            if (data.max_lines_per_page > 0) {
+                                textToRender = textToRender.split('\n').slice(0, data.max_lines_per_page).join('\n');
+                            }
+                            const lines = textToRender.split('\n');
 
                             const makeTextChildren = (lineArr, color) => {
                                 return lineArr.map((line, i) => {
@@ -172,9 +198,11 @@ app.registerExtension({
                                 display: "flex", flexDirection: "column",
                                 alignItems: "center", justifyContent: "center",
                                 width: "100%", height: "100%",
-                                fontFamily: "'Inter', sans-serif",
+                                fontFamily: data.font_family,
                                 fontSize: data.font_size + "px",
                                 fontWeight: "bold", textTransform: "uppercase",
+                                letterSpacing: data.letter_spacing + "px",
+                                lineHeight: data.line_height,
                             };
 
                             // SVG 1: Stroke only (hitam, dengan WebkitTextStroke)
