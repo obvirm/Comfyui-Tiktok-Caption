@@ -132,6 +132,10 @@ app.registerExtension({
                         width: getVal("width") || 1080,
                         height: getVal("height") || 1920,
                         shadow_color: getVal("shadow_color") || "#000000",
+                        position_x: getVal("position_x") || 0,
+                        position_y: getVal("position_y") || 0,
+                        vertical_align: getVal("vertical_align") || "center",
+                        alignment: getVal("alignment") || "center",
                         shadow_blur: getVal("shadow_blur") || 0,
                         shadow_offset_x: getVal("shadow_offset_x") || 2,
                         shadow_offset_y: getVal("shadow_offset_y") || 2,
@@ -199,15 +203,21 @@ app.registerExtension({
                                 });
                             };
 
+                            const valignMap = { "top": "flex-start", "center": "center", "bottom": "flex-end" };
+                            const alignMap = { "left": "flex-start", "center": "center", "right": "flex-end" };
+                            const textAlignMap = { "left": "left", "center": "center", "right": "right" };
+
                             const baseStyle = {
                                 display: "flex", flexDirection: "column",
-                                alignItems: "center", justifyContent: "center",
+                                alignItems: alignMap[data.alignment] || "center",
+                                justifyContent: valignMap[data.vertical_align] || "center",
                                 width: "100%", height: "100%",
                                 fontFamily: data.font_family,
                                 fontSize: data.font_size + "px",
                                 fontWeight: "bold", textTransform: "uppercase",
                                 letterSpacing: data.letter_spacing + "px",
                                 lineHeight: data.line_height,
+                                textAlign: textAlignMap[data.alignment] || "center",
                             };
 
                             // SVG 1: Stroke only (hitam, dengan WebkitTextStroke)
@@ -288,9 +298,11 @@ app.registerExtension({
                             }
 
                             // Composite: shadow (paling belakang) -> stroke -> fill (paling depan)
+                            const px = data.position_x || 0;
+                            const py = data.position_y || 0;
                             this.takumiPreviewEl.innerHTML = `
                                 <style>${animStyle}</style>
-                                <div style="position:relative;width:100%;height:100%;">
+                                <div style="position:relative;width:100%;height:100%;transform:translate(${px}%,${py}%);">
                                     <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;transform:translate(${sx}px,${sy}px);${blurFilter}${shadowAnim}">${shadowSvg}</div>
                                     <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;${strokeAnim}">${strokeSvg}</div>
                                     <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;${fillAnim}">${fillSvg}</div>
