@@ -42,6 +42,48 @@ app.registerExtension({
                 const previewNode = document.createElement("div");
                 Object.assign(previewNode.style, {
                     width: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                    marginTop: "10px",
+                });
+
+                // Color picker row
+                const colorRow = document.createElement("div");
+                Object.assign(colorRow.style, { display: "flex", gap: "8px", flexWrap: "wrap" });
+
+                const colorFields = [
+                    { name: "font_color", label: "Font", def: "#FFFFFF" },
+                    { name: "stroke_color", label: "Stroke", def: "#000000" },
+                    { name: "highlight_color", label: "Highlight", def: "#ff0050" }
+                ];
+
+                const colorBtns = {};
+                colorFields.forEach(({ name, label, def }) => {
+                    const field = document.createElement("div");
+                    Object.assign(field.style, { display: "flex", alignItems: "center", gap: "4px" });
+
+                    const lbl = document.createElement("span");
+                    lbl.textContent = label;
+                    lbl.style.cssText = "color:#aaa;font-size:10px;";
+
+                    const colorBtn = document.createElement("input");
+                    colorBtn.type = "color";
+                    colorBtn.value = def;
+                    colorBtn.style.cssText = "width:24px;height:20px;border:1px solid #555;border-radius:3px;cursor:pointer;background:transparent;padding:0;";
+
+                    colorBtns[name] = colorBtn;
+                    field.appendChild(lbl);
+                    field.appendChild(colorBtn);
+                    colorRow.appendChild(field);
+                });
+
+                previewNode.appendChild(colorRow);
+
+                // Canvas container
+                const canvasContainer = document.createElement("div");
+                Object.assign(canvasContainer.style, {
+                    width: "100%",
                     minHeight: "300px",
                     backgroundColor: "#1a1a1a",
                     position: "relative",
@@ -50,7 +92,6 @@ app.registerExtension({
                     alignItems: "center",
                     justifyContent: "center",
                     borderRadius: "8px",
-                    marginTop: "10px",
                 });
 
                 const captionEl = document.createElement("div");
@@ -62,63 +103,11 @@ app.registerExtension({
                     justifyContent: "center",
                 });
                 captionEl.innerHTML = "<div style='color:#666;font-size:12px;font-family:sans-serif;'>TAKUMI WASM LOADING...</div>";
-                previewNode.appendChild(captionEl);
+                canvasContainer.appendChild(captionEl);
+                previewNode.appendChild(canvasContainer);
 
                 this.addDOMWidget("TAKUMI_PREVIEW", "preview", previewNode, { serialize: false, hideOnZoom: false });
                 this.takumiPreviewEl = captionEl;
-
-                // Helper: get widget value
-                const getVal = (name) => {
-                    const w = this.widgets?.find(w => w.name === name);
-                    return w ? w.value : null;
-                };
-
-                // Color picker widgets
-                const colorFields = [
-                    { name: "font_color", label: "Font", def: "#FFFFFF" },
-                    { name: "stroke_color", label: "Stroke", def: "#000000" },
-                    { name: "highlight_color", label: "Highlight", def: "#ff0050" }
-                ];
-
-                colorFields.forEach(({ name, label, def }) => {
-                    const row = document.createElement("div");
-                    Object.assign(row.style, { display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" });
-
-                    const lbl = document.createElement("span");
-                    lbl.textContent = label + ": ";
-                    lbl.style.cssText = "color:#aaa;font-size:11px;width:60px;";
-
-                    const colorBtn = document.createElement("input");
-                    colorBtn.type = "color";
-                    colorBtn.value = getVal(name) || def;
-                    colorBtn.style.cssText = "width:28px;height:22px;border:1px solid #555;border-radius:4px;cursor:pointer;background:transparent;padding:0;";
-
-                    const textInput = document.createElement("input");
-                    textInput.type = "text";
-                    textInput.value = colorBtn.value;
-                    textInput.style.cssText = "width:70px;background:#222;color:#fff;border:1px solid #555;border-radius:4px;padding:2px 4px;font-size:11px;font-family:monospace;";
-
-                    colorBtn.addEventListener("input", () => {
-                        textInput.value = colorBtn.value;
-                        const w = this.widgets?.find(w => w.name === name);
-                        if (w) w.value = colorBtn.value;
-                        renderLive();
-                    });
-
-                    textInput.addEventListener("change", () => {
-                        if (/^#[0-9a-f]{6}$/i.test(textInput.value)) {
-                            colorBtn.value = textInput.value;
-                            const w = this.widgets?.find(w => w.name === name);
-                            if (w) w.value = textInput.value;
-                            renderLive();
-                        }
-                    });
-
-                    row.appendChild(lbl);
-                    row.appendChild(colorBtn);
-                    row.appendChild(textInput);
-                    previewNode.parentNode?.insertBefore(row, previewNode);
-                });
 
                 const renderLive = () => {
                     if (!this.takumiPreviewEl) return;
@@ -234,6 +223,15 @@ app.registerExtension({
                         this.takumiPreviewEl.innerHTML = "<div style='color:orange;font-size:12px;font-family:monospace;'>Takumi WASM offline.</div>";
                     }
                 };
+
+                // Wire up color picker event listeners
+                Object.keys(colorBtns).forEach(name => {
+                    colorBtns[name].addEventListener("input", () => {
+                        const w = this.widgets?.find(w => w.name === name);
+                        if (w) w.value = colorBtns[name].value;
+                        renderLive();
+                    });
+                });
 
                 setTimeout(() => {
                     if (this.widgets) {
