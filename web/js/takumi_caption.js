@@ -125,9 +125,10 @@ app.registerExtension({
                         stroke_width: getVal("stroke_width") || 4,
                         width: getVal("width") || 1080,
                         height: getVal("height") || 1920,
-                        shadow_offset: getVal("shadow_offset") || 3,
-                        shadow_blur: getVal("shadow_blur") || 4,
-                        shadow_opacity: getVal("shadow_opacity") || 0.6,
+                        shadow_color: getVal("shadow_color") || "#000000",
+                        shadow_blur: getVal("shadow_blur") || 0,
+                        shadow_offset_x: getVal("shadow_offset_x") || 2,
+                        shadow_offset_y: getVal("shadow_offset_y") || 2,
                         highlight_color: getVal("highlight_color") || "#ff0050"
                     };
 
@@ -208,21 +209,23 @@ app.registerExtension({
                             };
                             const fillSvg = takumiRenderer.renderSvg(fillAST, { width: W, height: H });
 
-                            // SVG 3: Shadow (text hitam, offset, untuk efek drop shadow)
-                            const shadowOpacity = data.shadow_opacity || 0.6;
+                            // SVG 3: Shadow
+                            const shadowColor = data.shadow_color || "#000000";
                             const shadowAST = {
                                 type: "container",
-                                style: { ...baseStyle, color: `rgba(0,0,0,${shadowOpacity})` },
-                                children: makeTextChildren(lines, `rgba(0,0,0,${shadowOpacity})`)
+                                style: { ...baseStyle, color: shadowColor },
+                                children: makeTextChildren(lines, shadowColor)
                             };
                             const shadowSvg = takumiRenderer.renderSvg(shadowAST, { width: W, height: H });
 
-                            const so = data.shadow_offset || 3;
-                            const sb = data.shadow_blur || 4;
+                            const sx = data.shadow_offset_x || 0;
+                            const sy = data.shadow_offset_y || 0;
+                            const sb = data.shadow_blur || 0;
+                            const blurFilter = sb > 0 ? `filter:blur(${sb}px);` : "";
                             // Composite: shadow (paling belakang) -> stroke -> fill (paling depan)
                             this.takumiPreviewEl.innerHTML = `
                                 <div style="position:relative;width:100%;height:100%;">
-                                    <div style="position:absolute;top:${so}%;left:${so}%;width:100%;height:100%;z-index:0;filter:blur(${sb}px);opacity:${shadowOpacity};">${shadowSvg}</div>
+                                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;transform:translate(${sx}px,${sy}px);${blurFilter}">${shadowSvg}</div>
                                     <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;">${strokeSvg}</div>
                                     <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;">${fillSvg}</div>
                                 </div>
