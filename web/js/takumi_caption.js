@@ -84,61 +84,84 @@ app.registerExtension({
                         highlight_color: val("highlight_color") || "#ff0050"
                     };
 
-                    if (wasmReady && fontLoaded) {
+                    if (wasmReady && takumiRenderer && fontLoaded) {
                         try {
                             const W = 1080, H = 1920;
-                            const canvas = document.createElement("canvas");
-                            canvas.width = W;
-                            canvas.height = H;
-                            const ctx = canvas.getContext("2d");
+                            const lines = data.text.split('\n');
 
-                            ctx.clearRect(0, 0, W, H);
+                            const makeTextChildren = (lineArr, color) => {
+                                return lineArr.map((line, i) => {
+                                    if (i === 0 && line.includes(' ')) {
+                                        const parts = line.split(' ');
+                                        const first = parts.shift();
+                                        return {
+                                            type: "container",
+                                            style: { display: "flex", flexDirection: "row", gap: "10px" },
+                                            children: [
+                                                { type: "text", style: { color: color }, text: first },
+                                                { type: "text", style: { color: color }, text: parts.join(' ') }
+                                            ]
+                                        };
+                                    }
+                                    return { type: "text", style: { color: color }, text: line };
+                                });
+                            };
 
-                            const fontStr = `bold ${data.font_size}px 'Inter', sans-serif`;
-                            ctx.font = fontStr;
-                            ctx.textAlign = "center";
-                            ctx.textBaseline = "middle";
-                            ctx.textTransform = "uppercase";
+                            const baseStyle = {
+                                display: "flex", flexDirection: "column",
+                                alignItems: "center", justifyContent: "center",
+                                width: "100%", height: "100%",
+                                fontFamily: "'Inter', sans-serif",
+                                fontSize: data.font_size + "px",
+                                fontWeight: "bold", textTransform: "uppercase",
+                            };
 
-                            const lines = data.text.toUpperCase().split('\n');
-                            const lineHeight = data.font_size * 1.2;
-                            const totalHeight = lines.length * lineHeight;
-                            const startY = (H - totalHeight) / 2 + lineHeight / 2;
+                            // SVG 1: Stroke only (hitam, dengan WebkitTextStroke)
+                            const strokeAST = {
+                                type: "container",
+                                style: { ...baseStyle, color: data.stroke_color, WebkitTextStrokeWidth: data.stroke_width + "px", WebkitTextStrokeColor: data.stroke_color },
+                                children: makeTextChildren(lines, data.stroke_color)
+                            };
+                            const strokeSvg = takumiRenderer.renderSvg(strokeAST, { width: W, height: H });
 
-                            lines.forEach((line, i) => {
-                                const y = startY + i * lineHeight;
-
+                            // SVG 2: Fill only (putih/highlight, tanpa stroke)
+                            const fillChildren = lines.map((line, i) => {
                                 if (i === 0 && line.includes(' ')) {
-                                    // Highlight first word
                                     const parts = line.split(' ');
                                     const first = parts.shift();
-                                    const rest = parts.join(' ');
-
-                                    // Measure widths
-                                    const firstWidth = ctx.measureText(first).width;
-                                    const spaceWidth = ctx.measureText(' ').width;
-                                    const restWidth = ctx.measureText(rest).width;
-                                    const totalWidth = firstWidth + spaceWidth + restWidth;
-                                    const startX = (W - totalWidth) / 2;
-
-                                    // Draw first word (highlight)
-                                    drawTikTokText(ctx, first, startX + firstWidth / 2, y, data.highlight_color, data.stroke_color, data.stroke_width);
-
-                                    // Draw rest (white)
-                                    drawTikTokText(ctx, rest, startX + firstWidth + spaceWidth + restWidth / 2, y, data.font_color, data.stroke_color, data.stroke_width);
-                                } else {
-                                    drawTikTokText(ctx, line, W / 2, y, data.font_color, data.stroke_color, data.stroke_width);
+                                    return {
+                                        type: "container",
+                                        style: { display: "flex", flexDirection: "row", gap: "10px" },
+                                        children: [
+                                            { type: "text", style: { color: data.highlight_color }, text: first },
+                                            { type: "text", style: { color: data.font_color }, text: parts.join(' ') }
+                                        ]
+                                    };
                                 }
+                                return { type: "text", style: { color: data.font_color }, text: line };
                             });
 
-                            const img = document.createElement("img");
-                            img.src = canvas.toDataURL("image/png");
-                            img.style.width = "100%";
-                            img.style.height = "100%";
-                            img.style.objectFit = "contain";
+                            const fillAST = {
+                                type: "container",
+                                style: { ...baseStyle, color: data.font_color },
+                                children: fillChildren
+                            };
+                            const fillSvg = takumiRenderer.renderSvg(fillAST, { width: W, height: H });
 
-                            this.takumiPreviewEl.innerHTML = "";
-                            this.takumiPreviewEl.appendChild(img);
+                            // Composite: stroke SVG di belakang, fill SVG di depan
+                            this.takumiPreviewEl.innerHTML = `
+                                <div style="position:relative;width:100%;height:100%;">
+                                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;">${strokeSvg}</div>
+                                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;">${fillSvg}</div>
+                                </div>
+                            `;
+
+                            const svgs = this.takumiPreviewEl.querySelectorAll("svg");
+                            svgs.forEach(svg => {
+                                svg.style.width = "100%";
+                                svg.style.height = "100%";
+                                svg.style.objectFit = "contain";
+                            });
 
                         } catch (e) {
                             console.error("[Takumi WASM] Render error:", e);
@@ -167,24 +190,3 @@ app.registerExtension({
         }
     },
 });
-
-function drawTikTokText(ctx, text, x, y, fillColor, strokeColor, strokeWidth) {
-    ctx.save();
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    // Stroke (outline) - dilukis DULU = di BELAKANG fill = outline di LUAR
-    if (strokeWidth > 0) {
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = strokeWidth * 2;
-        ctx.lineJoin = "round";
-        ctx.miterLimit = 2;
-        ctx.strokeText(text, x, y);
-    }
-
-    // Fill (font color) - dilukis SETELAH = di ATAS stroke
-    ctx.fillStyle = fillColor;
-    ctx.fillText(text, x, y);
-
-    ctx.restore();
-}
