@@ -55,7 +55,11 @@ app.registerExtension({
                 const colorFields = [
                     { name: "font_color", label: "Font", def: "#FFFFFF" },
                     { name: "stroke_color", label: "Stroke", def: "#000000" },
-                    { name: "highlight_color", label: "Highlight", def: "#ff0050" }
+                    { name: "highlight_color", label: "Highlight", def: "#ff0050" },
+                    { name: "shadow_color", label: "Shadow", def: "#000000" },
+                    { name: "active_word_color", label: "Active", def: "#ff0050" },
+                    { name: "active_glow_color", label: "Glow", def: "#ff0050" },
+                    { name: "active_bg_color", label: "Bg", def: "transparent" }
                 ];
 
                 const colorBtns = {};
@@ -69,12 +73,35 @@ app.registerExtension({
 
                     const colorBtn = document.createElement("input");
                     colorBtn.type = "color";
-                    colorBtn.value = def;
+                    colorBtn.value = def === "transparent" ? "#000000" : def;
                     colorBtn.style.cssText = "width:24px;height:20px;border:1px solid #555;border-radius:3px;cursor:pointer;background:transparent;padding:0;";
+
+                    const hexInput = document.createElement("input");
+                    hexInput.type = "text";
+                    hexInput.value = def;
+                    hexInput.style.cssText = "width:60px;background:#222;color:#fff;border:1px solid #555;border-radius:3px;padding:1px 3px;font-size:9px;font-family:monospace;";
+
+                    colorBtn.addEventListener("input", () => {
+                        hexInput.value = colorBtn.value;
+                        const w = this.widgets?.find(w => w.name === name);
+                        if (w) w.value = colorBtn.value;
+                        renderLive();
+                    });
+
+                    hexInput.addEventListener("change", () => {
+                        const v = hexInput.value.trim();
+                        if (v === "transparent" || /^#[0-9a-f]{6}$/i.test(v)) {
+                            if (v !== "transparent") colorBtn.value = v;
+                            const w = this.widgets?.find(w => w.name === name);
+                            if (w) w.value = v;
+                            renderLive();
+                        }
+                    });
 
                     colorBtns[name] = colorBtn;
                     field.appendChild(lbl);
                     field.appendChild(colorBtn);
+                    field.appendChild(hexInput);
                     colorRow.appendChild(field);
                 });
 
