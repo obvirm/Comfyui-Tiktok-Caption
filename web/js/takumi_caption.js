@@ -112,6 +112,11 @@ app.registerExtension({
                 const renderLive = () => {
                     if (!this.takumiPreviewEl) return;
 
+                    const getVal = (name) => {
+                        const w = this.widgets?.find(w => w.name === name);
+                        return w ? w.value : null;
+                    };
+
                     const data = {
                         text: getVal("text") || "Wah, gila banget nih!\nRender real-time pakai WASM\nGaya TikTok kekinian",
                         font_size: getVal("font_size") || 48,
