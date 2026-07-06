@@ -35,6 +35,14 @@ class TakumiCaptionNode:
                 "bounce": ("BOOLEAN", {"default": False}),
                 "scale_in": ("BOOLEAN", {"default": False}),
                 "fade_in": ("BOOLEAN", {"default": False}),
+                "active_word_color": ("STRING", {"default": "#ff0050"}),
+                "active_glow_color": ("STRING", {"default": "#ff0050"}),
+                "active_glow_intensity": ("INT", {"default": 0, "min": 0, "max": 20, "step": 1}),
+                "active_scale": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1}),
+                "active_rotation": ("INT", {"default": 0, "min": -45, "max": 45, "step": 1}),
+                "active_skew": ("INT", {"default": 0, "min": -30, "max": 30, "step": 1}),
+                "active_bg_color": ("STRING", {"default": "transparent"}),
+                "active_bg_radius": ("INT", {"default": 0, "min": 0, "max": 50, "step": 1}),
             }
         }
 

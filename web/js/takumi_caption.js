@@ -144,6 +144,14 @@ app.registerExtension({
                         bounce: getVal("bounce") || false,
                         scale_in: getVal("scale_in") || false,
                         fade_in: getVal("fade_in") || false,
+                        active_word_color: getVal("active_word_color") || "#ff0050",
+                        active_glow_color: getVal("active_glow_color") || "#ff0050",
+                        active_glow_intensity: getVal("active_glow_intensity") || 0,
+                        active_scale: getVal("active_scale") || 1.0,
+                        active_rotation: getVal("active_rotation") || 0,
+                        active_skew: getVal("active_skew") || 0,
+                        active_bg_color: getVal("active_bg_color") || "transparent",
+                        active_bg_radius: getVal("active_bg_radius") || 0,
                         highlight_color: getVal("highlight_color") || "#ff0050"
                     };
 
@@ -229,15 +237,24 @@ app.registerExtension({
                             const strokeSvg = takumiRenderer.renderSvg(strokeAST, { width: W, height: H });
 
                             // SVG 2: Fill only (putih/highlight, tanpa stroke)
+                            const activeStyle = {
+                                color: data.active_word_color,
+                                transform: `scale(${data.active_scale}) rotate(${data.active_rotation}deg) skewX(${data.active_skew}deg)`,
+                                filter: data.active_glow_intensity > 0 ? `drop-shadow(0 0 ${data.active_glow_intensity}px ${data.active_glow_color})` : "none",
+                                backgroundColor: data.active_bg_color,
+                                borderRadius: data.active_bg_radius + "px",
+                                padding: data.active_bg_color !== "transparent" ? "2px 8px" : "0",
+                            };
+
                             const fillChildren = lines.map((line, i) => {
                                 if (i === 0 && line.includes(' ')) {
                                     const parts = line.split(' ');
                                     const first = parts.shift();
                                     return {
                                         type: "container",
-                                        style: { display: "flex", flexDirection: "row", gap: "10px" },
+                                        style: { display: "flex", flexDirection: "row", gap: "10px", alignItems: "center" },
                                         children: [
-                                            { type: "text", style: { color: data.highlight_color }, text: first },
+                                            { type: "text", style: activeStyle, text: first },
                                             { type: "text", style: { color: data.font_color }, text: parts.join(' ') }
                                         ]
                                     };
