@@ -18,6 +18,9 @@ class TakumiCaptionNode:
                 "stroke_width": ("INT", {"default": 4, "min": 0, "max": 20}),
                 "width": ("INT", {"default": 1080, "min": 64, "max": 4096}),
                 "height": ("INT", {"default": 1920, "min": 64, "max": 4096}),
+                "shadow_offset": ("INT", {"default": 3, "min": 0, "max": 20, "step": 1}),
+                "shadow_blur": ("INT", {"default": 4, "min": 0, "max": 20, "step": 1}),
+                "shadow_opacity": ("FLOAT", {"default": 0.6, "min": 0.0, "max": 1.0, "step": 0.1}),
                 "highlight_color": ("STRING", {"default": "#ff0050"}),
             }
         }
