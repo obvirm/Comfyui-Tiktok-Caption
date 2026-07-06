@@ -274,13 +274,20 @@ app.registerExtension({
                                 textAlign: textAlignMap[data.alignment] || "center",
                             };
 
-                            // SVG 1: Stroke only (hitam, dengan WebkitTextStroke)
+                            // SVG 1: Stroke only - gunakan warna stroke sebagai fill, stroke width via SVG attr
                             const strokeAST = {
                                 type: "container",
-                                style: { ...baseStyle, color: data.stroke_color, WebkitTextStrokeWidth: data.stroke_width + "px", WebkitTextStrokeColor: data.stroke_color },
+                                style: { ...baseStyle, color: data.stroke_color },
                                 children: makeTextChildren(lines, data.stroke_color, false)
                             };
-                            const strokeSvg = takumiRenderer.renderSvg(strokeAST, { width: W, height: H });
+                            let strokeSvg = takumiRenderer.renderSvg(strokeAST, { width: W, height: H });
+                            // Tambahkan stroke attribute ke semua path SVG untuk outline
+                            if (data.stroke_width > 0) {
+                                strokeSvg = strokeSvg.replace(
+                                    /<path([^>]*)>/g,
+                                    `<path stroke="${data.stroke_color}" stroke-width="${data.stroke_width}" stroke-linejoin="round" paint-order="stroke"$1>`
+                                );
+                            }
 
                             // SVG 2: Fill only (putih/highlight, tanpa stroke)
                             const fillChildren = lines.map((line, i) => {
