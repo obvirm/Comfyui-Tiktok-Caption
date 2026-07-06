@@ -81,12 +81,17 @@ app.registerExtension({
                         font_color: val("font_color") || "#FFFFFF",
                         stroke_color: val("stroke_color") || "#000000",
                         stroke_width: val("stroke_width") || 4,
+                        aspect_ratio: val("aspect_ratio") || "9:16",
                         highlight_color: val("highlight_color") || "#ff0050"
                     };
 
                     if (wasmReady && takumiRenderer && fontLoaded) {
                         try {
-                            const W = 1080, H = 1920;
+                            const ratios = { "9:16":[9,16], "16:9":[16,9], "1:1":[1,1], "4:3":[4,3], "3:4":[3,4], "3:2":[3,2], "2:3":[2,3] };
+                            const [rw, rh] = ratios[data.aspect_ratio] || [9, 16];
+                            const base = 1080;
+                            const W = rw >= rh ? base : Math.round(base * rw / rh);
+                            const H = rh >= rw ? base : Math.round(base * rh / rw);
                             const lines = data.text.split('\n');
 
                             const makeTextChildren = (lineArr, color) => {

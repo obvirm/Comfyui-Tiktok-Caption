@@ -16,8 +16,7 @@ class TakumiCaptionNode:
                 "font_color": ("STRING", {"default": "#FFFFFF"}),
                 "stroke_color": ("STRING", {"default": "#000000"}),
                 "stroke_width": ("INT", {"default": 4, "min": 0, "max": 20}),
-                "width": ("INT", {"default": 512, "min": 64, "max": 4096}),
-                "height": ("INT", {"default": 512, "min": 64, "max": 4096}),
+                "aspect_ratio": (["9:16", "16:9", "1:1", "4:3", "3:4", "3:2", "2:3"], {"default": "9:16"}),
                 "highlight_color": ("STRING", {"default": "#ff0050"}),
             }
         }
@@ -68,8 +67,23 @@ class TakumiCaptionNode:
             "children": children
         }
 
-    def render_caption(self, text, font_size, font_color, stroke_color, stroke_width, width, height, highlight_color):
+    def _resolve_aspect(self, aspect_ratio, base=1080):
+        ratios = {
+            "9:16": (9, 16), "16:9": (16, 9), "1:1": (1, 1),
+            "4:3": (4, 3), "3:4": (3, 4), "3:2": (3, 2), "2:3": (2, 3)
+        }
+        w_ratio, h_ratio = ratios.get(aspect_ratio, (9, 16))
+        if w_ratio >= h_ratio:
+            w = base
+            h = int(base * h_ratio / w_ratio)
+        else:
+            h = base
+            w = int(base * w_ratio / h_ratio)
+        return w, h
+
+    def render_caption(self, text, font_size, font_color, stroke_color, stroke_width, aspect_ratio, highlight_color):
         
+        width, height = self._resolve_aspect(aspect_ratio)
         takumi_ast = self._build_takumi_ast(text, font_size, font_color, stroke_color, stroke_width, highlight_color)
         fallback_used = False
         
