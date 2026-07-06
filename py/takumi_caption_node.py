@@ -28,7 +28,10 @@ class TakumiCaptionNode:
                 "shadow_blur": ("INT", {"default": 0, "min": 0, "max": 20, "step": 1}),
                 "shadow_offset_x": ("INT", {"default": 2, "min": -20, "max": 20, "step": 1}),
                 "shadow_offset_y": ("INT", {"default": 2, "min": -20, "max": 20, "step": 1}),
-                "highlight_color": ("STRING", {"default": "#ff0050"}),
+                "word_pop": ("BOOLEAN", {"default": False}),
+                "bounce": ("BOOLEAN", {"default": False}),
+                "scale_in": ("BOOLEAN", {"default": False}),
+                "fade_in": ("BOOLEAN", {"default": False}),
             }
         }
 

@@ -135,6 +135,11 @@ app.registerExtension({
                         shadow_blur: getVal("shadow_blur") || 0,
                         shadow_offset_x: getVal("shadow_offset_x") || 2,
                         shadow_offset_y: getVal("shadow_offset_y") || 2,
+                        highlight_color: getVal("highlight_color") || "#ff0050",
+                        word_pop: getVal("word_pop") || false,
+                        bounce: getVal("bounce") || false,
+                        scale_in: getVal("scale_in") || false,
+                        fade_in: getVal("fade_in") || false,
                         highlight_color: getVal("highlight_color") || "#ff0050"
                     };
 
@@ -250,12 +255,45 @@ app.registerExtension({
                             const sy = data.shadow_offset_y || 0;
                             const sb = data.shadow_blur || 0;
                             const blurFilter = sb > 0 ? `filter:blur(${sb}px);` : "";
+
+                            // Build animation styles
+                            let animStyle = "";
+                            let fillAnim = "";
+                            let strokeAnim = "";
+                            let shadowAnim = "";
+
+                            if (data.fade_in) {
+                                animStyle += `@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }`;
+                                fillAnim += `animation: fadeIn 0.5s ease-out forwards;`;
+                                strokeAnim += `animation: fadeIn 0.5s ease-out forwards;`;
+                                shadowAnim += `animation: fadeIn 0.5s ease-out forwards;`;
+                            }
+                            if (data.scale_in) {
+                                animStyle += `@keyframes scaleIn { from { transform:scale(0); } to { transform:scale(1); } }`;
+                                fillAnim += `animation: scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;`;
+                                strokeAnim += `animation: scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;`;
+                                shadowAnim += `animation: scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;`;
+                            }
+                            if (data.bounce) {
+                                animStyle += `@keyframes bounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-20px); } }`;
+                                fillAnim += `animation: bounce 0.6s ease-in-out infinite;`;
+                                strokeAnim += `animation: bounce 0.6s ease-in-out infinite;`;
+                                shadowAnim += `animation: bounce 0.6s ease-in-out infinite;`;
+                            }
+                            if (data.word_pop) {
+                                animStyle += `@keyframes wordPop { 0% { transform:scale(0) rotate(-10deg); opacity:0; } 60% { transform:scale(1.2) rotate(2deg); } 100% { transform:scale(1) rotate(0); opacity:1; } }`;
+                                fillAnim += `animation: wordPop 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;`;
+                                strokeAnim += `animation: wordPop 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;`;
+                                shadowAnim += `animation: wordPop 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;`;
+                            }
+
                             // Composite: shadow (paling belakang) -> stroke -> fill (paling depan)
                             this.takumiPreviewEl.innerHTML = `
+                                <style>${animStyle}</style>
                                 <div style="position:relative;width:100%;height:100%;">
-                                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;transform:translate(${sx}px,${sy}px);${blurFilter}">${shadowSvg}</div>
-                                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;">${strokeSvg}</div>
-                                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;">${fillSvg}</div>
+                                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;transform:translate(${sx}px,${sy}px);${blurFilter}${shadowAnim}">${shadowSvg}</div>
+                                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;${strokeAnim}">${strokeSvg}</div>
+                                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;${fillAnim}">${fillSvg}</div>
                                 </div>
                             `;
 
