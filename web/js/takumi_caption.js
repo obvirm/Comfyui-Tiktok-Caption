@@ -67,6 +67,53 @@ app.registerExtension({
                 this.addDOMWidget("TAKUMI_PREVIEW", "preview", previewNode, { serialize: false, hideOnZoom: false });
                 this.takumiPreviewEl = captionEl;
 
+                // Color picker widgets
+                const colorFields = [
+                    { name: "font_color", label: "Font" },
+                    { name: "stroke_color", label: "Stroke" },
+                    { name: "highlight_color", label: "Highlight" }
+                ];
+
+                colorFields.forEach(({ name, label }) => {
+                    const row = document.createElement("div");
+                    Object.assign(row.style, { display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" });
+
+                    const lbl = document.createElement("span");
+                    lbl.textContent = label + ": ";
+                    lbl.style.cssText = "color:#aaa;font-size:11px;width:60px;";
+
+                    const colorBtn = document.createElement("input");
+                    colorBtn.type = "color";
+                    colorBtn.value = val(name) || (name === "stroke_color" ? "#000000" : name === "highlight_color" ? "#ff0050" : "#FFFFFF");
+                    colorBtn.style.cssText = "width:28px;height:22px;border:1px solid #555;border-radius:4px;cursor:pointer;background:transparent;padding:0;";
+
+                    const textInput = document.createElement("input");
+                    textInput.type = "text";
+                    textInput.value = colorBtn.value;
+                    textInput.style.cssText = "width:70px;background:#222;color:#fff;border:1px solid #555;border-radius:4px;padding:2px 4px;font-size:11px;font-family:monospace;";
+
+                    colorBtn.addEventListener("input", () => {
+                        textInput.value = colorBtn.value;
+                        const w = this.widgets?.find(w => w.name === name);
+                        if (w) w.value = colorBtn.value;
+                        renderLive();
+                    });
+
+                    textInput.addEventListener("change", () => {
+                        if (/^#[0-9a-f]{6}$/i.test(textInput.value)) {
+                            colorBtn.value = textInput.value;
+                            const w = this.widgets?.find(w => w.name === name);
+                            if (w) w.value = textInput.value;
+                            renderLive();
+                        }
+                    });
+
+                    row.appendChild(lbl);
+                    row.appendChild(colorBtn);
+                    row.appendChild(textInput);
+                    previewNode.parentNode?.insertBefore(row, previewNode);
+                });
+
                 const renderLive = () => {
                     if (!this.takumiPreviewEl) return;
 
