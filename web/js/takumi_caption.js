@@ -67,14 +67,20 @@ app.registerExtension({
                 this.addDOMWidget("TAKUMI_PREVIEW", "preview", previewNode, { serialize: false, hideOnZoom: false });
                 this.takumiPreviewEl = captionEl;
 
+                // Helper: get widget value
+                const getVal = (name) => {
+                    const w = this.widgets?.find(w => w.name === name);
+                    return w ? w.value : null;
+                };
+
                 // Color picker widgets
                 const colorFields = [
-                    { name: "font_color", label: "Font" },
-                    { name: "stroke_color", label: "Stroke" },
-                    { name: "highlight_color", label: "Highlight" }
+                    { name: "font_color", label: "Font", def: "#FFFFFF" },
+                    { name: "stroke_color", label: "Stroke", def: "#000000" },
+                    { name: "highlight_color", label: "Highlight", def: "#ff0050" }
                 ];
 
-                colorFields.forEach(({ name, label }) => {
+                colorFields.forEach(({ name, label, def }) => {
                     const row = document.createElement("div");
                     Object.assign(row.style, { display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" });
 
@@ -84,7 +90,7 @@ app.registerExtension({
 
                     const colorBtn = document.createElement("input");
                     colorBtn.type = "color";
-                    colorBtn.value = val(name) || (name === "stroke_color" ? "#000000" : name === "highlight_color" ? "#ff0050" : "#FFFFFF");
+                    colorBtn.value = getVal(name) || def;
                     colorBtn.style.cssText = "width:28px;height:22px;border:1px solid #555;border-radius:4px;cursor:pointer;background:transparent;padding:0;";
 
                     const textInput = document.createElement("input");
@@ -117,20 +123,15 @@ app.registerExtension({
                 const renderLive = () => {
                     if (!this.takumiPreviewEl) return;
 
-                    const val = (name) => {
-                        const w = this.widgets?.find(w => w.name === name);
-                        return w ? w.value : null;
-                    };
-
                     const data = {
-                        text: val("text") || "Wah, gila banget nih!\nRender real-time pakai WASM\nGaya TikTok kekinian",
-                        font_size: val("font_size") || 48,
-                        font_color: val("font_color") || "#FFFFFF",
-                        stroke_color: val("stroke_color") || "#000000",
-                        stroke_width: val("stroke_width") || 4,
-                        width: val("width") || 1080,
-                        height: val("height") || 1920,
-                        highlight_color: val("highlight_color") || "#ff0050"
+                        text: getVal("text") || "Wah, gila banget nih!\nRender real-time pakai WASM\nGaya TikTok kekinian",
+                        font_size: getVal("font_size") || 48,
+                        font_color: getVal("font_color") || "#FFFFFF",
+                        stroke_color: getVal("stroke_color") || "#000000",
+                        stroke_width: getVal("stroke_width") || 4,
+                        width: getVal("width") || 1080,
+                        height: getVal("height") || 1920,
+                        highlight_color: getVal("highlight_color") || "#ff0050"
                     };
 
                     // Sesuaikan rasio canvas preview
