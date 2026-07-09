@@ -1,0 +1,14 @@
+{
+  "name": "comfyui-caption-live",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npx esbuild src/takumi_caption.ts --bundle --minify --alias:@modules=./vendor/tscaps-engine/modules --outfile=web/js/takumi_caption.js",
+    "dev": "npx esbuild src/takumi_caption.ts --bundle --watch --alias:@modules=./vendor/tscaps-engine/modules --outfile=web/js/takumi_caption.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -36,6 +36,7 @@ dist/
 
 # Node
 node_modules/
+npm-debug.log*
 
 # Old dependencies
 depot_tools/
@@ -54,6 +55,20 @@ lib/**/*.pyd
 
 # Local agent files
 .agent/
+.pi/
+
+# --- Project-specific ignores ---
+# The `takumi/` dir is the UPSTREAM tscaps rust/browser reference repo
+# (1.8GB, checked out for engine source only). It is NOT used at runtime
+# and must never be committed.
+takumi/
+# Stray test artifacts / screenshots / debug outputs
+*.png
+media/
+ast_schema.json
+# Local preview render temp
+/tmp/
+
 
 # Emscripten SDK (600MB+)
 core/emsdk/

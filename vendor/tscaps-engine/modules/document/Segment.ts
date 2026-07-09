@@ -1,0 +1,112 @@
+import { TimeFragment } from '@modules/document/TimeFragment';
+import { Tag } from '@modules/document/Tag';
+import { CssVariable } from '@modules/document/CssVariable';
+import { Line } from '@modules/document/Line';
+import { Word } from '@modules/document/Word';
+
+export interface SegmentProps<M = unknown> {
+  readonly lines: ReadonlyArray<Line>;
+  readonly structureTags?: ReadonlySet<Tag> | undefined;
+  readonly id?: string | undefined;
+  /**
+   * Optional explicit time. When present, `time` returns this verbatim;
+   * otherwise `time` is derived from the segment's words. Lets a caller
+   * decouple the segment's time window from its word boundaries (e.g.
+   * to hold a segment on screen past its narration end).
+   */
+  readonly customTime?: TimeFragment | null | undefined;
+  readonly metadata?: M | undefined;
+}
+
+/**
+ * Render-time context the segment needs from its ancestors to emit
+ * its variables.
+ */
+export interface SegmentRenderContext {
+  readonly indexInSection: number;
+}
+
+export class Segment<M = unknown> {
+  static readonly CSS_CLASS = 'segment';
+
+  readonly lines: ReadonlyArray<Line>;
+  readonly structureTags: ReadonlySet<Tag>;
+  readonly id: string;
+  readonly customTime: TimeFragment | null;
+  readonly metadata: M | undefined;
+
+  constructor(props: SegmentProps<M>) {
+    this.lines = props.lines;
+    this.structureTags = props.structureTags ?? new Set();
+    this.id = props.id ?? crypto.randomUUID();
+    this.customTime = props.customTime ?? null;
+    this.metadata = props.metadata;
+  }
+
+  get time(): TimeFragment {
+    if (this.customTime) return this.customTime;
+    const first = this.lines[0];
+    const last = this.lines[this.lines.length - 1];
+    if (!first || !last) throw new Error('Segment has no lines');
+    return new TimeFragment(first.time.start, last.time.end);
+  }
+
+  getCssClasses(_currentTime: number): string[] {
+    const classes: string[] = [Segment.CSS_CLASS];
+    for (const tag of this.structureTags) {
+      classes.push(tag.toCssClass());
+    }
+    return classes;
+  }
+
+  getCssVariables(currentTime: number, ctx: SegmentRenderContext): Record<string, string> {
+    return {
+      [CssVariable.SEGMENT_STARTS]: `${(this.time.start - currentTime).toFixed(3)}s`,
+      [CssVariable.SEGMENT_ENDS]: `${(this.time.end - currentTime).toFixed(3)}s`,
+      [CssVariable.SEGMENT_DURATION]: `${(this.time.end - this.time.start).toFixed(3)}s`,
+      [CssVariable.SEGMENT_CHAR_COUNT]: String(this.getText().length),
+      [CssVariable.SEGMENT_INDEX]: String(ctx.indexInSection),
+      [CssVariable.WORD_COUNT]: String(this.getWordCount()),
+      [CssVariable.LAST_WORD_CHAR_COUNT]: String(this.getLastWordCharCount()),
+    };
+  }
+
+  private getWordCount(): number {
+    return this.lines.reduce((sum, line) => sum + line.words.length, 0);
+  }
+
+  private getLastWordCharCount(): number {
+    const lastLine = this.lines[this.lines.length - 1];
+    const lastWord = lastLine?.words[lastLine.words.length - 1];
+    return lastWord ? [...lastWord.displayText].length : 0;
+  }
+
+  getWords(): Word[] {
+    return this.lines.flatMap((line) => [...line.words]);
+  }
+
+  getText(): string {
+    return this.lines.map((line) => line.getText()).join(' ');
+  }
+
+  with(changes: Partial<SegmentProps<M>>): Segment<M> {
+    return new Segment<M>({
+      lines: this.lines,
+      structureTags: this.structureTags,
+      id: this.id,
+      customTime: this.customTime,
+      metadata: this.metadata,
+      ...changes,
+    });
+  }
+
+  withMetadata<N>(metadata: N): Segment<N> {
+    return new Segment<N>({
+      lines: this.lines,
+      structureTags: this.structureTags,
+      id: this.id,
+      customTime: this.customTime,
+      metadata,
+    });
+  }
+}
