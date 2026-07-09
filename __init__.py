@@ -84,6 +84,17 @@ class TakumiCaptionNode:
                 # (old template slot -> these) with value 0 self-heals to default.
                 "width": ("INT", {"default": 540, "min": 1, "max": 4096}),
                 "height": ("INT", {"default": 960, "min": 1, "max": 4096}),
+                # font_size in cqh (% of frame height). 0 = use template/CSS default.
+                "font_size": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 100.0, "step": 0.5}),
+                # Caption anchor inside the frame. Defaults match the engine's
+                # DEFAULT_ALIGNMENT so existing renders are unchanged.
+                "vertical_align": (["top", "center", "bottom"], {"default": "bottom"}),
+                "vertical_offset": ("FLOAT", {"default": 0.85, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "horizontal_align": (["left", "center", "right"], {"default": "center"}),
+                "horizontal_offset": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "rotation": ("FLOAT", {"default": 0.0, "min": -180.0, "max": 180.0, "step": 1.0}),
+                "text_color": ("STRING", {"default": "", "multiline": False}),
+                "highlight_color": ("STRING", {"default": "", "multiline": False}),
                 # template LAST so older workflows (srt,css,w,h) keep mapping
                 "template": (template_names, {"default": "(none / custom)"}),
             },
@@ -93,7 +104,9 @@ class TakumiCaptionNode:
     FUNCTION = "execute"
     CATEGORY = "image/text"
 
-    def execute(self, srt, css, width, height, template):
+    def execute(self, srt, css, width, height, font_size, vertical_align,
+                vertical_offset, horizontal_align, horizontal_offset,
+                rotation, text_color, highlight_color, template):
         import torch, numpy as np
         from PIL import Image
         # Self-heal stale/positional-mismatched numeric inputs.
@@ -110,21 +123,48 @@ class TakumiCaptionNode:
         # Fixed internal sample rate (SAMPLE_FPS=30) is applied inside the
         # engine; no fps parameter is exposed (avoids preview/output desync
         # and the flicker that came from mismatched frame counts).
+        # Build inline styles; numeric/color overrides only apply when the
+        # user sets them, so template/CSS defaults are preserved otherwise.
+        inline_styles = {}
         if template and template != "(none / custom)":
             loaded = template_loader.load_template(template, font_scale=3.5)
             if loaded:
                 css = loaded["css"]
-                return self._render(loaded["css"], loaded["inlineStyles"], srt, width, height)
-        return self._render(css, {}, srt, width, height)
+                inline_styles = dict(loaded["inlineStyles"])
+        try:
+            fs = float(font_size)
+        except Exception:
+            fs = 0.0
+        if fs and fs > 0:
+            inline_styles["--tscaps-font-size"] = f"{fs}cqh"
+        try:
+            rot = float(rotation)
+        except Exception:
+            rot = 0.0
+        if rot != 0:
+            inline_styles["--tscaps-rotation"] = f"{rot}deg"
+        tc = (text_color or "").strip()
+        if tc:
+            inline_styles["--tscaps-primary-color"] = tc
+        hc = (highlight_color or "").strip()
+        if hc:
+            inline_styles["--tscaps-highlight-color"] = hc
+        alignment = {
+            "verticalAlign": vertical_align,
+            "verticalOffset": float(vertical_offset),
+            "horizontalAlign": horizontal_align,
+            "horizontalOffset": float(horizontal_offset),
+        }
+        return self._render(css, inline_styles, alignment, srt, width, height)
 
-    def _render(self, css, inline_styles, srt, width, height):
+    def _render(self, css, inline_styles, alignment, srt, width, height):
         import torch, numpy as np
         from PIL import Image
         if render_frames is None:
             logger.error("render_frames unavailable")
             return (torch.zeros((1, height, width, 3), dtype=torch.float32),)
         try:
-            pngs = render_frames(srt, css, width, height, inline_styles=inline_styles)
+            pngs = render_frames(srt, css, width, height, inline_styles=inline_styles, alignment=alignment)
             if not pngs:
                 logger.warning("No frames rendered")
                 return (torch.zeros((1, height, width, 3), dtype=torch.float32),)

@@ -21,7 +21,7 @@ PY_EXE = sys.executable
 TMP = "C:/tmp"
 
 
-def render_frames(srt: str, css: str, width: int, height: int, inline_styles: dict = None) -> list:
+def render_frames(srt: str, css: str, width: int, height: int, inline_styles: dict = None, alignment: dict = None) -> list:
     """Render all caption frames → list of PNG bytes (same engine as preview).
 
     The fps parameter has been removed: the engine always samples at the
@@ -30,11 +30,14 @@ def render_frames(srt: str, css: str, width: int, height: int, inline_styles: di
     """
     req_path = os.path.join(TMP, "render_req.json")
     out_path = os.path.join(TMP, "render_out.json")
+    params = {
+        "srt": srt, "css": css, "width": width, "height": height,
+        "inlineStyles": inline_styles or {},
+    }
+    if alignment:
+        params["alignment"] = alignment
     req = {
-        "params": {
-            "srt": srt, "css": css, "width": width, "height": height,
-            "inlineStyles": inline_styles or {},
-        },
+        "params": params,
         # fps kept in payload for backward-compat with the child but ignored
         # (the JS uses its internal SAMPLE_FPS constant).
         "fps": 30,

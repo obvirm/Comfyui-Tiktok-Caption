@@ -61,9 +61,10 @@ function setupWidget(node: any): void {
   row.appendChild(lbl);
 
   const c = document.createElement('div');
-  // Container fills the node width; its aspect ratio is set at render time to
-  // match the OUTPUT (width:height) so the caption is never distorted.
-  c.style.cssText = 'width:100%;box-sizing:border-box;background:#000;position:relative;overflow:hidden;border-radius:4px;border:2px solid #444';
+  // The preview box size is set explicitly in px at render time (render())
+  // to the EXACT output aspect ratio, so the frame can never be stretched.
+  // margin:0 auto centers it inside the node; it is the empty "wadah".
+  c.style.cssText = 'margin:0 auto;box-sizing:border-box;background:#000;position:relative;overflow:hidden;border-radius:4px;border:2px solid #444';
   // On first layout, adopt the output aspect ratio so the box isn't squashed
   // before the first render() runs.
   c.style.aspectRatio = '9 / 16';
@@ -93,27 +94,26 @@ function setupWidget(node: any): void {
     const width = parseInt(getWidgetVal(node, 'width') || '540');
     const height = parseInt(getWidgetVal(node, 'height') || '960');
     if (!srt.trim()) { st.textContent = 'no srt'; return; }
-    // Match the preview box aspect ratio to the OUTPUT aspect ratio so the
-    // caption is never distorted when output isn't 9/16.
-    if (height > 0) c.style.aspectRatio = `${width} / ${height}`;
-    // --- PROXY PREVIEW ---
-    // We render the caption at the OUTPUT's real resolution (so the engine's
-    // `cqh`-based font sizing computes the caption at the true size), then let
-    // CSS shrink the whole canvas into the small preview box. The result is a
-    // ZOOM of the real frame — the text and frame scale together uniformly,
-    // the caption does NOT re-layout / change proportions. That is exactly
-    // the "proxy" behaviour you want: change the output resolution and the
-    // preview just zooms, the caption looks identical relative to the frame.
-    // We cap the preview's long edge at PROXY_LONG so a 4K output can't OOM
-    // the browser with a giant canvas; the cap scales the proxy down
-    // UNIFORMLY, so the text-to-frame ratio (and thus the zoom look) is
-    // preserved 1:1 with the real output.
-    const PROXY_LONG = 1280;
-    const scale = Math.min(1, PROXY_LONG / Math.max(width, height));
-    const pw = Math.max(64, Math.round(width * scale));
-    const ph = Math.max(64, Math.round(height * scale));
+    // --- NATIVE PREVIEW ---
+    // Render the caption at the EXACT output resolution (width x height) so
+    // the preview is pixel-identical (1:1) to the headless final render. No
+    // downscale / proxy: the engine's `cqh` font sizing runs at the true frame
+    // size, and CSS only displays the finished canvas scaled to fit the box.
+    const pw = Math.max(1, Math.round(width));
+    const ph = Math.max(1, Math.round(height));
     canvas.width = pw;
     canvas.height = ph;
+    // Size the preview box to the EXACT output aspect ratio using explicit
+    // pixel dimensions (no aspect-ratio + min/max conflict) so the frame can
+    // never look stretched/squished ("gepeng"), landscape or portrait.
+    const MAX_BOX = 320;
+    const ar = pw / ph;
+    let bw: number, bh: number;
+    if (ar >= 1) { bw = MAX_BOX; bh = Math.max(1, Math.round(MAX_BOX / ar)); }
+    else { bh = MAX_BOX; bw = Math.max(1, Math.round(MAX_BOX * ar)); }
+    c.style.aspectRatio = 'auto';
+    c.style.width = bw + 'px';
+    c.style.height = bh + 'px';
 
     let css = getWidgetVal(node, 'css') || '';
     let inline: Record<string,string> = {};
@@ -131,12 +131,30 @@ function setupWidget(node: any): void {
         st.textContent = 'tpl err: ' + (e?.message || e);
       }
     }
+    // font_size (cqh). 0 = use template/CSS default; >0 overrides it.
+    const font_size = parseFloat(getWidgetVal(node, 'font_size') || '0') || 0;
+    if (font_size > 0) inline['--tscaps-font-size'] = `${font_size}cqh`;
+    // rotation (deg). 0 = use template/CSS default; !=0 overrides it.
+    const rotation = parseFloat(getWidgetVal(node, 'rotation') || '0') || 0;
+    if (rotation !== 0) inline['--tscaps-rotation'] = `${rotation}deg`;
+    // color overrides (hex). empty = use template/CSS default.
+    const text_color = (getWidgetVal(node, 'text_color') || '').trim();
+    if (text_color) inline['--tscaps-primary-color'] = text_color;
+    const highlight_color = (getWidgetVal(node, 'highlight_color') || '').trim();
+    if (highlight_color) inline['--tscaps-highlight-color'] = highlight_color;
+    // alignment (caption anchor inside the frame).
+    const alignment = {
+      verticalAlign: getWidgetVal(node, 'vertical_align') || 'bottom',
+      verticalOffset: parseFloat(getWidgetVal(node, 'vertical_offset') || '0.85') || 0.85,
+      horizontalAlign: getWidgetVal(node, 'horizontal_align') || 'center',
+      horizontalOffset: parseFloat(getWidgetVal(node, 'horizontal_offset') || '0.5') || 0.5,
+    };
     st.textContent = 'rendering…';
     try {
       // Fast path: render straight to ImageBitmaps (no toDataURL/fetch/decode,
       // which was the cause of both flicker AND the "lemot" lag on every
       // parameter change). Bitmaps are cached and drawn 1:1 to the canvas.
-      const bitmaps = await renderCaptionFramesToBitmaps({ srt, css, width: pw, height: ph, inlineStyles: inline });
+      const bitmaps = await renderCaptionFramesToBitmaps({ srt, css, width: pw, height: ph, inlineStyles: inline, alignment });
       st.textContent = `${bitmaps.length} frames`;
       frameBitmaps = bitmaps;
       if (bitmaps.length === 0) return;
@@ -201,42 +219,108 @@ function setupWidget(node: any): void {
     return v;
   }
 
-  let attempts = 0;
-  const poll = setInterval(() => {
-    attempts++;
-    const el = domEl(node);
-    if (el) {
-      clearInterval(poll);
-      if (el.querySelector('.takumi-preview-widget')) return;
-      el.style.overflow = 'hidden';
-      el.appendChild(wrap);
-      wrap.style.gridColumn = '1 / -1';
-      wrap.style.gridRow = '-1';
-      wrap.style.order = '9999';
-      if (node.widgets) {
-        node.widgets.forEach((w: any) => {
-          const oc = w.callback;
-          w.callback = function (this: any) {
-            // Debounce: parameter drags fire many callbacks; collapse them
-            // into one re-render per animation frame so the preview stays
-            // responsive (no "lemot" pile-up of concurrent renders).
-            if (oc) oc.apply(this, arguments);
-            if (!node.__twRaf) {
-              node.__twRaf = true;
-              requestAnimationFrame(() => { node.__twRaf = false; render(); });
-            }
-          };
-        });
+  // Debounce re-render on widget changes so the preview stays responsive.
+  function wireCallbacks() {
+    if (!node.widgets) return;
+    node.widgets.forEach((w: any) => {
+      const oc = w.callback;
+      w.callback = function (this: any) {
+        if (oc) oc.apply(this, arguments);
+        // When the template changes, re-sync the color pickers to that
+        // template's default colors so the picker never silently overrides
+        // the template's look.
+        if (this && this.name === 'template') syncColorDefaults(node);
+        if (!node.__twRaf) {
+          node.__twRaf = true;
+          requestAnimationFrame(() => { node.__twRaf = false; render(); });
+        }
+      };
+    });
+  }
+
+  // Replace a STRING widget with ComfyUI's built-in "color" picker, keeping the
+  // same name and position so its hex value still maps to the Python input.
+  function replaceWithColorWidget(n: any, name: string, defaultHex: string): void {
+    const idx = n.widgets?.findIndex((w: any) => w.name === name);
+    if (idx == null || idx < 0) return;
+    n.widgets.splice(idx, 1);
+    const cw = (n as any).addWidget('color', name, defaultHex, () => {});
+    n.widgets.splice(idx, 0, cw);
+  }
+
+  // Sync the color pickers' values to the active template's default colors
+  // (or neutral defaults when no template). This keeps the override a no-op
+  // until the user actually picks a different color.
+  async function syncColorDefaults(n: any): Promise<void> {
+    let pc = '#ffffff';
+    let hc = '#ffd400';
+    const template = getWidgetVal(n, 'template');
+    if (template && template !== '(none / custom)') {
+      try {
+        const json = await fetch(`/extensions/Comfyui-Caption-Live/templates/${template}/template.json`).then(r => r.text());
+        const data = JSON.parse(json);
+        const controls = data.styleControls || [];
+        const pcCtl = controls.find((c: any) => c.id === 'primary-color');
+        if (pcCtl && pcCtl.default) pc = pcCtl.default;
+        const hcCtl = controls.find((c: any) => c.id === 'highlight-color');
+        if (hcCtl && hcCtl.default) hc = hcCtl.default;
+      } catch {}
+    }
+    const tw = n.widgets?.find((w: any) => w.name === 'text_color');
+    if (tw) tw.value = pc;
+    const hw = n.widgets?.find((w: any) => w.name === 'highlight_color');
+    if (hw) hw.value = hc;
+  }
+
+  // Replace the text_color / highlight_color text boxes with ComfyUI's
+  // built-in color pickers, synced to the active template's default colors.
+  if (!node.__twColor && typeof (node as any).addWidget === 'function') {
+    node.__twColor = true;
+    try {
+      replaceWithColorWidget(node, 'text_color', '#ffffff');
+      replaceWithColorWidget(node, 'highlight_color', '#ffd400');
+      syncColorDefaults(node);
+    } catch (e) {
+      node.__twColor = false;
+      console.error('[Takumi] color picker setup failed:', e);
+    }
+  }
+
+  // Register the preview as a ComfyUI DOM widget so the node EXTENDS DOWNWARD
+  // to contain it (like an embedded iframe) instead of floating/overlapping
+  // the widgets. ComfyUI manages its layout and grows the node height to fit.
+  function mountPreview() {
+    if (typeof (node as any).addDOMWidget === 'function') {
+      try {
+        (node as any).addDOMWidget('takumi_preview', 'takumi_preview', wrap, {});
+      } catch (e) {
+        fallbackMount();
+        return;
       }
-      el.addEventListener('change', render, true);
-      // Force an initial render slightly later (widget values may not be
-      // populated synchronously at node-creation time)
+      wireCallbacks();
       setTimeout(render, 500);
       render();
       return;
     }
-    if (attempts > 150) clearInterval(poll);
-  }, 200);
+    fallbackMount();
+  }
+
+  // Fallback for frontends without addDOMWidget: append into the node DOM.
+  function fallbackMount() {
+    const el = domEl(node);
+    if (!el) { setTimeout(fallbackMount, 200); return; }
+    if (el.querySelector('.takumi-preview-widget')) return;
+    el.style.overflow = 'hidden';
+    el.appendChild(wrap);
+    wrap.style.display = 'block';
+    wrap.style.gridColumn = '1 / -1';
+    wireCallbacks();
+    el.addEventListener('change', render, true);
+    setTimeout(render, 500);
+    render();
+  }
+
+  mountPreview();
 }
 
 function waitForApp() {
