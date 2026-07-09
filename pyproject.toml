@@ -1,63 +1,40 @@
-[build-system]
-requires = ["setuptools>=64", "wheel", "pybind11>=2.11"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "caption-engine"
+name = "comfyui-tiktok-caption"
+description = "TikTok Caption — ComfyUI custom node that renders CSS-styled captions/subtitles from SRT or plain text using the tscaps engine, with a 1:1 in-node live preview."
 version = "1.0.0"
-description = "Caption Engine - High-performance rendering engine for caption effects"
-readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
-    {name = "Caption Live Team"}
+    { name = "Caption Live Team" }
 ]
-keywords = ["caption", "video", "effects", "rendering", "comfyui"]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: C++",
-    "Topic :: Multimedia :: Video",
-]
+keywords = ["caption", "subtitle", "video", "comfyui", "tscaps"]
 requires-python = ">=3.9"
 dependencies = [
     "numpy>=1.20",
     "pillow>=9.0",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0",
-    "pytest-cov",
-    "black",
-    "ruff",
-]
-cuda = [
-    "torch>=2.0",
+    "cloakbrowser",
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-org/caption-live"
-Repository = "https://github.com/your-org/caption-live.git"
-Issues = "https://github.com/your-org/caption-live/issues"
+Repository = "https://github.com/obvirm/Comfyui-Tiktok-Caption"
+Documentation = "https://github.com/obvirm/Comfyui-Tiktok-Caption/wiki"
+"Bug Tracker" = "https://github.com/obvirm/Comfyui-Tiktok-Caption/issues"
 
-[tool.setuptools]
-packages = ["caption_engine"]
-package-dir = {"caption_engine" = "lib/caption_engine"}
-
-[tool.setuptools.package-data]
-caption_engine = ["*.pyd", "*.so", "*.dylib", "*.dll"]
-
-[tool.black]
-line-length = 88
-target-version = ['py39', 'py310', 'py311', 'py312']
-
-[tool.ruff]
-line-length = 88
-select = ["E", "F", "I", "N", "W"]
-ignore = ["E501"]
+[tool.comfy]
+# Comfy Registry publisher id (must match your registered publisher account).
+PublisherId = "obvirm"
+DisplayName = "Comfyui-Tiktok-Caption"
+Icon = ""
+includes = [
+    "__init__.py",
+    "py",
+    "src",
+    "web",
+    "vendor",
+    "package.json",
+    "package-lock.json",
+    "tsconfig.json",
+    "vite.config.ts",
+    "README.md",
+    "pyproject.toml",
+]
+# requires-comfyui = ">=1.0.0"

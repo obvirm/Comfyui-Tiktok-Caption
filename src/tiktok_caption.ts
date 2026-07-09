@@ -121,8 +121,8 @@ function setupWidget(node: any): void {
     if (template && template !== '(none / custom)') {
       try {
         const [cssTxt, jsonTxt] = await Promise.all([
-          fetch(`/extensions/Comfyui-Caption-Live/templates/${template}/style.css`).then(r => r.text()),
-          fetch(`/extensions/Comfyui-Caption-Live/templates/${template}/template.json`).then(r => r.text()),
+          fetch(`/extensions/Comfyui-Tiktok-Caption/templates/${template}/style.css`).then(r => r.text()),
+          fetch(`/extensions/Comfyui-Tiktok-Caption/templates/${template}/template.json`).then(r => r.text()),
         ]);
         css = cssTxt;
         const data = JSON.parse(jsonTxt);
@@ -257,7 +257,7 @@ function setupWidget(node: any): void {
     const template = getWidgetVal(n, 'template');
     if (template && template !== '(none / custom)') {
       try {
-        const json = await fetch(`/extensions/Comfyui-Caption-Live/templates/${template}/template.json`).then(r => r.text());
+        const json = await fetch(`/extensions/Comfyui-Tiktok-Caption/templates/${template}/template.json`).then(r => r.text());
         const data = JSON.parse(json);
         const controls = data.styleControls || [];
         const pcCtl = controls.find((c: any) => c.id === 'primary-color');

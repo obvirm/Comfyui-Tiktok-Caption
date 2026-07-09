@@ -1,0 +1,30 @@
+name: Publish to Comfy Registry
+
+on:
+  release:
+    types: [published]
+  # Uncomment to also publish on every tag push (e.g. `v1.0.0`):
+  # push:
+  #   tags:
+  #     - "v*"
+
+jobs:
+  publish-node:
+    name: Publish Node to Registry
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install comfy-cli
+        run: pip install comfy-cli
+
+      - name: Publish Node
+        env:
+          COMFY_REGISTRY_TOKEN: ${{ secrets.COMFY_REGISTRY_TOKEN }}
+        run: comfy node publish --token "$COMFY_REGISTRY_TOKEN"
