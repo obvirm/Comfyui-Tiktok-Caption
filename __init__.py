@@ -31,6 +31,12 @@ DEFAULT_CSS = """.segment{
   font-family: var(--tscaps-font-family, 'Montserrat'), system-ui, sans-serif;
   font-weight: 800;
   font-style: var(--tscaps-font-style, normal);
+  /* cqh = proportional to FRAME height. So when you change the output
+     resolution, the caption ZOOMS together with the frame (text grows/shrinks
+     with the frame), it does NOT re-grow relative to the preview box. This is
+     exactly the "proxy" look you want: the preview is just a zoomed-to-fit
+     view of the real frame. The preview canvas is rendered at the output
+     resolution and CSS-scaled down to the box (see takumi_caption.ts). */
   font-size: var(--tscaps-font-size, 13cqh);
   letter-spacing: var(--tscaps-letter-spacing, 0em);
   text-align: center;

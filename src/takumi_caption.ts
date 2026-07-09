@@ -96,14 +96,22 @@ function setupWidget(node: any): void {
     // Match the preview box aspect ratio to the OUTPUT aspect ratio so the
     // caption is never distorted when output isn't 9/16.
     if (height > 0) c.style.aspectRatio = `${width} / ${height}`;
-    // Render the preview at the FULL OUTPUT resolution (width×height) and let
-    // CSS scale the canvas DOWN into the preview box. Downscaling is
-    // anti-aliased → the text looks native/crisp, never pixelated. This also
-    // guarantees preview === headless-output (same resolution, same engine).
-    // (We do NOT render at the small displayed size — that would draw the text
-    // at low resolution and look blocky/pixelated, which is what you saw.)
-    const pw = Math.max(64, Math.round(width));
-    const ph = Math.max(64, Math.round(height));
+    // --- PROXY PREVIEW ---
+    // We render the caption at the OUTPUT's real resolution (so the engine's
+    // `cqh`-based font sizing computes the caption at the true size), then let
+    // CSS shrink the whole canvas into the small preview box. The result is a
+    // ZOOM of the real frame — the text and frame scale together uniformly,
+    // the caption does NOT re-layout / change proportions. That is exactly
+    // the "proxy" behaviour you want: change the output resolution and the
+    // preview just zooms, the caption looks identical relative to the frame.
+    // We cap the preview's long edge at PROXY_LONG so a 4K output can't OOM
+    // the browser with a giant canvas; the cap scales the proxy down
+    // UNIFORMLY, so the text-to-frame ratio (and thus the zoom look) is
+    // preserved 1:1 with the real output.
+    const PROXY_LONG = 1280;
+    const scale = Math.min(1, PROXY_LONG / Math.max(width, height));
+    const pw = Math.max(64, Math.round(width * scale));
+    const ph = Math.max(64, Math.round(height * scale));
     canvas.width = pw;
     canvas.height = ph;
 
