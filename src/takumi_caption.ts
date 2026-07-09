@@ -141,7 +141,12 @@ function setupWidget(node: any): void {
       frameBitmaps = bitmaps;
       if (bitmaps.length === 0) return;
       const drawFrame = (b: ImageBitmap | null) => {
-        if (b && ctx) ctx.drawImage(b, 0, 0, canvas.width, canvas.height);
+        if (!b || !ctx) return;
+        // Clear fully first so a partially-transparent glyph/antialias from a
+        // previous frame can't ghost behind the current one (the "berbayang"
+        // double-image you saw). Then paint the new bitmap at 1:1.
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(b, 0, 0, canvas.width, canvas.height);
       };
       drawFrame(bitmaps[0]);
       if (bitmaps.length === 1) return;
