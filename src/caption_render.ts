@@ -1,5 +1,5 @@
 /**
- * Takumi Caption — shared caption rendering API (browser-side).
+ * TikTok Caption — shared caption rendering API (browser-side).
  * Uses vendored tscaps engine: CSS-styled captions from SRT input.
  * Consumed by both the in-node preview (frontend) and the headless
  * final renderer (CloakBrowser) so preview === output (1:1).
@@ -195,4 +195,4 @@ export async function renderCaptionFramesToBitmaps(
 }
 
 // Headless entry: expose globals
-(window as any).TakumiCaption = { renderCaptionFrame, renderCaptionFrames, renderCaptionFramesToBitmaps, srtToDocument };
+(window as any).TikTokCaption = { renderCaptionFrame, renderCaptionFrames, renderCaptionFramesToBitmaps, srtToDocument };

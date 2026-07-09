@@ -1,11 +1,11 @@
-// Takumi Caption (tscaps) — in-node live preview
+// TikTok Caption (tscaps) — in-node live preview
 // Preview renders caption frames directly in the user's browser using the
 // same tscaps engine that the headless final renderer uses → 1:1 output.
-// Build: npx esbuild src/takumi_caption.ts --bundle --minify --alias:@modules=./vendor/tscaps-engine/modules --outfile=web/js/takumi_caption.js
+// Build: npx esbuild src/tiktok_caption.ts --bundle --minify --alias:@modules=./vendor/tscaps-engine/modules --outfile=web/js/tiktok_caption.js
 
 import { renderCaptionFramesToBitmaps, SAMPLE_FPS } from './caption_render';
 
-const TAG = '[Takumi]';
+const TAG = '[TikTok]';
 
 function domEl(node: any): HTMLElement | null {
   if (node.graphcanvas?.node_dom) {
@@ -22,7 +22,7 @@ function domEl(node: any): HTMLElement | null {
     return el ?? null;
   }
   for (const vn of document.querySelectorAll('[class*="group/node"]')) {
-    if (vn.textContent?.includes('Takumi Caption')) return vn as HTMLElement;
+    if (vn.textContent?.includes('TikTok Caption')) return vn as HTMLElement;
   }
   return null;
 }
@@ -51,7 +51,7 @@ function setupWidget(node: any): void {
 
   const wrap = document.createElement('div');
   wrap.style.cssText = 'width:100%;display:flex;flex-direction:column';
-  wrap.className = 'takumi-preview-widget';
+  wrap.className = 'tiktok-preview-widget';
 
   const row = document.createElement('div');
   row.style.cssText = 'width:100%;display:flex;align-items:center;gap:8px;margin-top:16px';
@@ -282,7 +282,7 @@ function setupWidget(node: any): void {
       syncColorDefaults(node);
     } catch (e) {
       node.__twColor = false;
-      console.error('[Takumi] color picker setup failed:', e);
+      console.error('[TikTok] color picker setup failed:', e);
     }
   }
 
@@ -292,7 +292,7 @@ function setupWidget(node: any): void {
   function mountPreview() {
     if (typeof (node as any).addDOMWidget === 'function') {
       try {
-        (node as any).addDOMWidget('takumi_preview', 'takumi_preview', wrap, {});
+        (node as any).addDOMWidget('tiktok_preview', 'tiktok_preview', wrap, {});
       } catch (e) {
         fallbackMount();
         return;
@@ -309,7 +309,7 @@ function setupWidget(node: any): void {
   function fallbackMount() {
     const el = domEl(node);
     if (!el) { setTimeout(fallbackMount, 200); return; }
-    if (el.querySelector('.takumi-preview-widget')) return;
+    if (el.querySelector('.tiktok-preview-widget')) return;
     el.style.overflow = 'hidden';
     el.appendChild(wrap);
     wrap.style.display = 'block';
@@ -329,7 +329,7 @@ function waitForApp() {
     (window as any).LiteGraph.LGraphNode.prototype.onNodeCreated = function (this: any) {
       if (orig) orig.apply(this, arguments);
       setTimeout(() => {
-        if (this.type === 'TakumiCaptionNode' || this.comfyClass === 'TakumiCaptionNode') {
+        if (this.type === 'TikTokCaptionNode' || this.comfyClass === 'TikTokCaptionNode') {
           console.log(TAG, 'node', this.id);
           setupWidget(this);
         }

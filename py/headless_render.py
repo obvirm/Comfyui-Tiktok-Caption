@@ -12,7 +12,7 @@ stdin/stdout/stderr = DEVNULL, communicating via temp files.
 """
 import os, sys, json, base64, subprocess, tempfile, logging
 
-logger = logging.getLogger("TakumiCaption")
+logger = logging.getLogger("TikTokCaption")
 
 current_dir = os.path.dirname(__file__)
 node_root = os.path.dirname(current_dir)

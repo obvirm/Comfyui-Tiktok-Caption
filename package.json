@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npx esbuild src/takumi_caption.ts --bundle --minify --alias:@modules=./vendor/tscaps-engine/modules --outfile=web/js/takumi_caption.js",
-    "dev": "npx esbuild src/takumi_caption.ts --bundle --watch --alias:@modules=./vendor/tscaps-engine/modules --outfile=web/js/takumi_caption.js"
+    "build": "npx esbuild src/tiktok_caption.ts --bundle --minify --alias:@modules=./vendor/tscaps-engine/modules --outfile=web/js/tiktok_caption.js",
+    "dev": "npx esbuild src/tiktok_caption.ts --bundle --watch --alias:@modules=./vendor/tscaps-engine/modules --outfile=web/js/tiktok_caption.js"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",

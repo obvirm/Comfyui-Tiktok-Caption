@@ -1,5 +1,5 @@
 """
-Takumi Caption — ComfyUI Custom Node (tscaps engine)
+TikTok Caption — ComfyUI Custom Node (tscaps engine)
 ================================================================
 Architecture (1:1 preview === output):
   • Preview   : runs in the user's browser (ComfyUI frontend). The
@@ -15,7 +15,7 @@ that `cloakbrowser` downloads once at install time.
 """
 import os, sys, logging, io
 
-logger = logging.getLogger("TakumiCaption")
+logger = logging.getLogger("TikTokCaption")
 
 current_dir = os.path.dirname(__file__)
 # current_dir IS .../Comfyui-Caption-Live — that is the node root.
@@ -72,7 +72,7 @@ except Exception as e:
     template_loader = None
 
 
-class TakumiCaptionNode:
+class TikTokCaptionNode:
     @classmethod
     def INPUT_TYPES(cls):
         template_names = ["(none / custom)"] + template_loader.list_templates()
@@ -185,6 +185,6 @@ class TakumiCaptionNode:
             return (torch.zeros((1, height, width, 3), dtype=torch.float32),)
 
 
-NODE_CLASS_MAPPINGS = {"TakumiCaptionNode": TakumiCaptionNode}
-NODE_DISPLAY_NAME_MAPPINGS = {"TakumiCaptionNode": "Takumi Caption (tscaps)"}
+NODE_CLASS_MAPPINGS = {"TikTokCaptionNode": TikTokCaptionNode}
+NODE_DISPLAY_NAME_MAPPINGS = {"TikTokCaptionNode": "TikTok Caption (tscaps)"}
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]

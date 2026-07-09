@@ -46,7 +46,7 @@ def main():
                 js_path = os.path.join(node_root, "web", "js", "takumi_caption.js")
                 page.add_script_tag(path=js_path)
                 out = page.evaluate(
-                    "(a) => window.TakumiCaption.renderCaptionFrames(a.params, a.fps)",
+                    "(a) => window.TikTokCaption.renderCaptionFrames(a.params, a.fps)",
                     {"params": params, "fps": fps},
                 )
                 with open(out_path, "w", encoding="utf-8") as f:
