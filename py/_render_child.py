@@ -43,7 +43,7 @@ def main():
             page = browser.new_page()
             try:
                 page.goto("about:blank")
-                js_path = os.path.join(node_root, "web", "js", "takumi_caption.js")
+                js_path = os.path.join(node_root, "web", "js", "tiktok_caption.js")
                 page.add_script_tag(path=js_path)
                 out = page.evaluate(
                     "(a) => window.TikTokCaption.renderCaptionFrames(a.params, a.fps)",

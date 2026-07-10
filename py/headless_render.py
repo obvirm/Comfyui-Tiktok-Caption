@@ -1,5 +1,5 @@
 """
-Takumi Caption — headless caption renderer (CloakBrowser / Chromium).
+TikTok Caption — headless caption renderer (CloakBrowser / Chromium).
 
 Renders CSS-styled captions from SRT using the EXACT same tscaps engine
 the in-node preview uses, so preview === output (1:1).
@@ -21,7 +21,7 @@ PY_EXE = sys.executable
 TMP = "C:/tmp"
 
 
-def render_frames(srt: str, css: str, width: int, height: int, inline_styles: dict = None, alignment: dict = None) -> list:
+def render_frames(srt: str, css: str, width: int, height: int, inline_styles: dict = None, alignment: dict = None, split_words_into_letters: bool = False) -> list:
     """Render all caption frames → list of PNG bytes (same engine as preview).
 
     The fps parameter has been removed: the engine always samples at the
@@ -33,6 +33,7 @@ def render_frames(srt: str, css: str, width: int, height: int, inline_styles: di
     params = {
         "srt": srt, "css": css, "width": width, "height": height,
         "inlineStyles": inline_styles or {},
+        "splitWordsIntoLetters": split_words_into_letters,
     }
     if alignment:
         params["alignment"] = alignment

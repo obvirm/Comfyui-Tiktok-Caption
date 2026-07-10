@@ -95,6 +95,9 @@ class TikTokCaptionNode:
                 "rotation": ("FLOAT", {"default": 0.0, "min": -180.0, "max": 180.0, "step": 1.0}),
                 "text_color": ("STRING", {"default": "", "multiline": False}),
                 "highlight_color": ("STRING", {"default": "", "multiline": False}),
+                # Split each word into per-letter <span> elements for
+                # letter-level CSS animations (wave, typewriter, bounce).
+                "split_words_into_letters": ("BOOLEAN", {"default": False}),
                 # template LAST so older workflows (srt,css,w,h) keep mapping
                 "template": (template_names, {"default": "(none / custom)"}),
             },
@@ -106,7 +109,7 @@ class TikTokCaptionNode:
 
     def execute(self, srt, css, width, height, font_size, vertical_align,
                 vertical_offset, horizontal_align, horizontal_offset,
-                rotation, text_color, highlight_color, template):
+                rotation, text_color, highlight_color, split_words_into_letters, template):
         import torch, numpy as np
         from PIL import Image
         # Self-heal stale/positional-mismatched numeric inputs.
@@ -155,16 +158,16 @@ class TikTokCaptionNode:
             "horizontalAlign": horizontal_align,
             "horizontalOffset": float(horizontal_offset),
         }
-        return self._render(css, inline_styles, alignment, srt, width, height)
+        return self._render(css, inline_styles, alignment, srt, width, height, split_words_into_letters)
 
-    def _render(self, css, inline_styles, alignment, srt, width, height):
+    def _render(self, css, inline_styles, alignment, srt, width, height, split_words_into_letters=False):
         import torch, numpy as np
         from PIL import Image
         if render_frames is None:
             logger.error("render_frames unavailable")
             return (torch.zeros((1, height, width, 3), dtype=torch.float32),)
         try:
-            pngs = render_frames(srt, css, width, height, inline_styles=inline_styles, alignment=alignment)
+            pngs = render_frames(srt, css, width, height, inline_styles=inline_styles, alignment=alignment, split_words_into_letters=split_words_into_letters)
             if not pngs:
                 logger.warning("No frames rendered")
                 return (torch.zeros((1, height, width, 3), dtype=torch.float32),)

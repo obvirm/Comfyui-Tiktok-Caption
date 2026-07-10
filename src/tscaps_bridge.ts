@@ -5,6 +5,7 @@ import { BrowserCssResourceEmbedder } from '@modules/css/BrowserCssResourceEmbed
 import { GraphemeWordSplitter } from '@modules/splitting/GraphemeWordSplitter';
 import { SrtTranscriber } from '@modules/transcription/SrtTranscriber';
 import { Document } from '@modules/document/Document';
+import { StructureTagger } from '@modules/tagging/StructureTagger';
 
 export {
   BrowserSubtitleFrameRenderer,
@@ -12,6 +13,7 @@ export {
   GraphemeWordSplitter,
   SrtTranscriber,
   Document,
+  StructureTagger,
 };
 
 export function createRenderer(embedder: any, splitter: any): any {

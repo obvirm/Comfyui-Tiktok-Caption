@@ -149,12 +149,14 @@ function setupWidget(node: any): void {
       horizontalAlign: getWidgetVal(node, 'horizontal_align') || 'center',
       horizontalOffset: parseFloat(getWidgetVal(node, 'horizontal_offset') || '0.5') || 0.5,
     };
+    // letter-level splitting for per-character CSS animations.
+    const splitLetters = !!getWidgetVal(node, 'split_words_into_letters');
     st.textContent = 'rendering…';
     try {
       // Fast path: render straight to ImageBitmaps (no toDataURL/fetch/decode,
       // which was the cause of both flicker AND the "lemot" lag on every
       // parameter change). Bitmaps are cached and drawn 1:1 to the canvas.
-      const bitmaps = await renderCaptionFramesToBitmaps({ srt, css, width: pw, height: ph, inlineStyles: inline, alignment });
+      const bitmaps = await renderCaptionFramesToBitmaps({ srt, css, width: pw, height: ph, inlineStyles: inline, alignment, splitWordsIntoLetters: splitLetters });
       st.textContent = `${bitmaps.length} frames`;
       frameBitmaps = bitmaps;
       if (bitmaps.length === 0) return;

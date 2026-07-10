@@ -13,6 +13,7 @@ import {
   createRenderer,
   BrowserCssResourceEmbedder,
   GraphemeWordSplitter,
+  StructureTagger,
 } from './tscaps_bridge';
 import type {
   SubtitleStyle,
@@ -31,6 +32,7 @@ export interface CaptionParams {
     horizontalAlign: string;
     horizontalOffset: number;
   };
+  splitWordsIntoLetters?: boolean;
 }
 
 /** Internal sampling rate (frames per second of caption timeline).
@@ -77,7 +79,11 @@ export async function srtToDocument(srt: string): Promise<any> {
   const normalized = normalizeCaptionInput(srt);
   if (!normalized) throw new Error('Empty caption input');
   const tr = new SrtTranscriber(normalized);
-  return await tr.transcribe(new Blob(), {});
+  const doc = await tr.transcribe(new Blob(), {});
+  // Apply structural tags (first-word-in-line, last-word-in-segment, etc.)
+  // so CSS rules targeting positional elements work.
+  const tagger = new StructureTagger();
+  return tagger.tag(doc);
 }
 
 /** Bundle a template folder's style.css + its default CSS variables as
@@ -100,7 +106,7 @@ function buildStyle(params: CaptionParams): Record<string, SubtitleStyle> {
     inlineStyles: (params as any).inlineStyles ?? {},
     alignment: (params.alignment as any) ?? DEFAULT_ALIGNMENT,
     rendering: {
-      splitWordsIntoLetters: false,
+      splitWordsIntoLetters: params.splitWordsIntoLetters ?? false,
       videoFrame: { required: false, jpegQuality: 1 },
       padding: null,
     },
