@@ -3,10 +3,9 @@ name: Publish to Comfy Registry
 on:
   release:
     types: [published]
-  # Uncomment to also publish on every tag push (e.g. `v1.0.0`):
-  # push:
-  #   tags:
-  #     - "v*"
+  push:
+    tags:
+      - "v*"
 
 jobs:
   publish-node:
