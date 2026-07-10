@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-tiktok-caption"
 description = "TikTok Caption — ComfyUI custom node that renders CSS-styled captions/subtitles from SRT or plain text using the tscaps engine, with a 1:1 in-node live preview."
-version = "1.0.0"
+version = "1.0.1"
 license = "MIT"
 authors = [
     { name = "Caption Live Team" }
@@ -9,15 +9,13 @@ authors = [
 keywords = ["caption", "subtitle", "video", "comfyui", "tscaps"]
 requires-python = ">=3.9"
 dependencies = [
-    "numpy>=1.20",
-    "pillow>=9.0",
+    "numpy",
+    "pillow",
     "cloakbrowser",
 ]
 
 [project.urls]
 Repository = "https://github.com/obvirm/Comfyui-Tiktok-Caption"
-Documentation = "https://github.com/obvirm/Comfyui-Tiktok-Caption/wiki"
-"Bug Tracker" = "https://github.com/obvirm/Comfyui-Tiktok-Caption/issues"
 
 [tool.comfy]
 # Comfy Registry publisher id (must match your registered publisher account).
