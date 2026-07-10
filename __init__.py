@@ -52,7 +52,9 @@ DEFAULT_CSS = """.segment{
 .word { display: inline-block; margin: 0 0.14em; }
 .word.word-being-narrated { color: var(--tscaps-highlight-color, #ffd400); }
 .word.word-already-narrated { color: #e0e0e0; }
-.quote { color: var(--tscaps-quote-color, #e6d647); font-style: italic; }"""
+.quote { color: var(--tscaps-quote-color, #e6d647); font-style: italic; }
+/* split_words_into_letters: per-letter spans for staggered animations */
+.letter { display: inline-block; }"""
 
 DEFAULT_SRT = """1
 00:00:00,000 --> 00:00:02,000
