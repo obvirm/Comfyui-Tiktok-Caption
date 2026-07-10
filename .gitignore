@@ -64,6 +64,7 @@ lib/**/*.pyd
 takumi/
 # Stray test artifacts / screenshots / debug outputs
 *.png
+!image/image.png
 media/
 ast_schema.json
 # Local preview render temp

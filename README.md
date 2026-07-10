@@ -1,5 +1,7 @@
 # Comfyui-Tiktok-Caption
 
+![TikTok Caption Node](image/image.png)
+
 ComfyUI custom node that renders CSS-styled captions and subtitles from SRT or plain text. Built on the [tscaps](https://github.com/francozanardi/tscaps) engine, with a 1:1 in-node live preview.
 
 ## Features
