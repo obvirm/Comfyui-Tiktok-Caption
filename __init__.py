@@ -87,7 +87,7 @@ class TikTokCaptionNode:
                 "width": ("INT", {"default": 540, "min": 1, "max": 4096}),
                 "height": ("INT", {"default": 960, "min": 1, "max": 4096}),
                 # font_size in cqh (% of frame height). 0 = use template/CSS default.
-                "font_size": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 100.0, "step": 0.5}),
+                "font_size": ("FLOAT", {"default": 4.0, "min": 0.0, "max": 100.0, "step": 0.5}),
                 # Caption anchor inside the frame. Defaults match the engine's
                 # DEFAULT_ALIGNMENT so existing renders are unchanged.
                 "vertical_align": (["top", "center", "bottom"], {"default": "bottom"}),
