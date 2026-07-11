@@ -100,6 +100,14 @@ class TikTokCaptionNode:
                 # Split each word into per-letter <span> elements for
                 # letter-level CSS animations (wave, typewriter, bounce).
                 "split_words_into_letters": ("BOOLEAN", {"default": False}),
+                # Text case transform. Applied via CSS text-transform.
+                "text_case": (["none", "lowercase", "capitalize", "uppercase"], {"default": "none"}),
+                # Max characters per caption segment. Controls caption density.
+                "max_chars": ("INT", {"default": 40, "min": 5, "max": 200, "step": 1}),
+                # Max lines per segment. 1 = TikTok single-line, 2 = balanced, 3 = long.
+                "max_lines": ("INT", {"default": 2, "min": 1, "max": 5, "step": 1}),
+                # Gap-free: extend segment end time to eliminate flicker between captions.
+                "gap_free": ("BOOLEAN", {"default": False}),
                 # template LAST so older workflows (srt,css,w,h) keep mapping
                 "template": (template_names, {"default": "(none / custom)"}),
             },
@@ -111,7 +119,8 @@ class TikTokCaptionNode:
 
     def execute(self, srt, css, width, height, font_size, vertical_align,
                 vertical_offset, horizontal_align, horizontal_offset,
-                rotation, text_color, highlight_color, split_words_into_letters, template):
+                rotation, text_color, highlight_color, split_words_into_letters,
+                text_case, max_chars, max_lines, gap_free, template):
         import torch, numpy as np
         from PIL import Image
         # Self-heal stale/positional-mismatched numeric inputs.
@@ -160,16 +169,22 @@ class TikTokCaptionNode:
             "horizontalAlign": horizontal_align,
             "horizontalOffset": float(horizontal_offset),
         }
-        return self._render(css, inline_styles, alignment, srt, width, height, split_words_into_letters)
+        return self._render(css, inline_styles, alignment, srt, width, height,
+                           split_words_into_letters, text_case, max_chars, max_lines, gap_free)
 
-    def _render(self, css, inline_styles, alignment, srt, width, height, split_words_into_letters=False):
+    def _render(self, css, inline_styles, alignment, srt, width, height,
+                split_words_into_letters=False, text_case="none",
+                max_chars=40, max_lines=2, gap_free=False):
         import torch, numpy as np
         from PIL import Image
         if render_frames is None:
             logger.error("render_frames unavailable")
             return (torch.zeros((1, height, width, 3), dtype=torch.float32),)
         try:
-            pngs = render_frames(srt, css, width, height, inline_styles=inline_styles, alignment=alignment, split_words_into_letters=split_words_into_letters)
+            pngs = render_frames(srt, css, width, height, inline_styles=inline_styles,
+                                alignment=alignment, split_words_into_letters=split_words_into_letters,
+                                text_case=text_case, max_chars=max_chars, max_lines=max_lines,
+                                gap_free=gap_free)
             if not pngs:
                 logger.warning("No frames rendered")
                 return (torch.zeros((1, height, width, 3), dtype=torch.float32),)

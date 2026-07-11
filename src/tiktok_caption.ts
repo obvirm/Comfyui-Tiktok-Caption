@@ -151,12 +151,22 @@ function setupWidget(node: any): void {
     };
     // letter-level splitting for per-character CSS animations.
     const splitLetters = !!getWidgetVal(node, 'split_words_into_letters');
+    // text case transform.
+    const textCase = getWidgetVal(node, 'text_case') || 'none';
+    // segment density controls.
+    const maxChars = parseInt(getWidgetVal(node, 'max_chars') || '40') || 40;
+    const maxLines = parseInt(getWidgetVal(node, 'max_lines') || '2') || 2;
+    // gap-free: eliminate flicker between segments.
+    const gapFree = !!getWidgetVal(node, 'gap_free');
     st.textContent = 'rendering…';
     try {
       // Fast path: render straight to ImageBitmaps (no toDataURL/fetch/decode,
       // which was the cause of both flicker AND the "lemot" lag on every
       // parameter change). Bitmaps are cached and drawn 1:1 to the canvas.
-      const bitmaps = await renderCaptionFramesToBitmaps({ srt, css, width: pw, height: ph, inlineStyles: inline, alignment, splitWordsIntoLetters: splitLetters });
+      const bitmaps = await renderCaptionFramesToBitmaps({
+        srt, css, width: pw, height: ph, inlineStyles: inline, alignment,
+        splitWordsIntoLetters: splitLetters, textCase, maxChars, maxLines, gapFree,
+      });
       st.textContent = `${bitmaps.length} frames`;
       frameBitmaps = bitmaps;
       if (bitmaps.length === 0) return;

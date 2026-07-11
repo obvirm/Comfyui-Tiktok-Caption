@@ -21,7 +21,10 @@ PY_EXE = sys.executable
 TMP = "C:/tmp"
 
 
-def render_frames(srt: str, css: str, width: int, height: int, inline_styles: dict = None, alignment: dict = None, split_words_into_letters: bool = False) -> list:
+def render_frames(srt: str, css: str, width: int, height: int, inline_styles: dict = None,
+                   alignment: dict = None, split_words_into_letters: bool = False,
+                   text_case: str = "none", max_chars: int = 40, max_lines: int = 2,
+                   gap_free: bool = False) -> list:
     """Render all caption frames → list of PNG bytes (same engine as preview).
 
     The fps parameter has been removed: the engine always samples at the
@@ -34,6 +37,10 @@ def render_frames(srt: str, css: str, width: int, height: int, inline_styles: di
         "srt": srt, "css": css, "width": width, "height": height,
         "inlineStyles": inline_styles or {},
         "splitWordsIntoLetters": split_words_into_letters,
+        "textCase": text_case,
+        "maxChars": max_chars,
+        "maxLines": max_lines,
+        "gapFree": gap_free,
     }
     if alignment:
         params["alignment"] = alignment

@@ -33,6 +33,10 @@ export interface CaptionParams {
     horizontalOffset: number;
   };
   splitWordsIntoLetters?: boolean;
+  textCase?: string;
+  maxChars?: number;
+  maxLines?: number;
+  gapFree?: boolean;
 }
 
 /** Internal sampling rate (frames per second of caption timeline).
@@ -86,6 +90,106 @@ export async function srtToDocument(srt: string): Promise<any> {
   return tagger.tag(doc);
 }
 
+// ── Document post-processing helpers ──────────────────────────────────
+
+/**
+ * Re-split segments that exceed maxChars by distributing words into
+ * new segments while preserving timing (words keep their original time).
+ */
+function applyMaxChars(doc: any, maxChars: number): any {
+  if (maxChars <= 0) return doc;
+  const { StructureTagger: ST } = require('./tscaps_bridge');
+  const newSections = doc.sections.map((section: any) => {
+    const newSegments: any[] = [];
+    for (const seg of section.segments) {
+      const words = seg.lines.flatMap((l: any) => [...l.words]);
+      if (getTextLen(words) <= maxChars) {
+        newSegments.push(seg);
+        continue;
+      }
+      // Split words into chunks respecting maxChars
+      let current: any[] = [];
+      for (const w of words) {
+        const candidate = [...current, w];
+        if (current.length > 0 && getTextLen(candidate) > maxChars) {
+          newSegments.push(makeSegment(current, seg.time.start, seg.time.end));
+          current = [w];
+        } else {
+          current = candidate;
+        }
+      }
+      if (current.length > 0) {
+        newSegments.push(makeSegment(current, seg.time.start, seg.time.end));
+      }
+    }
+    return section.with({ segments: newSegments });
+  });
+  const tagged = doc.with({ sections: newSections });
+  return new ST().tag(tagged);
+}
+
+/** Get total character count of words (space-separated). */
+function getTextLen(words: any[]): number {
+  return words.reduce((sum, w) => sum + w.displayText.length, 0) + Math.max(0, words.length - 1);
+}
+
+/** Create a Segment from an array of words, distributing time proportionally. */
+function makeSegment(words: any[], segStart: number, segEnd: number): any {
+  const { Line } = require('./tscaps_bridge');
+  // Each word is its own line (letter-level splitting handles display)
+  const lines = words.map((w: any) => new Line({ words: [w] }));
+  // Set customTime to preserve original segment timing
+  const time = new (require('@modules/document/TimeFragment').TimeFragment)(segStart, segEnd);
+  const seg = new (require('@modules/document/Segment').Segment)({ lines, customTime: time });
+  return seg;
+}
+
+/**
+ * Re-split lines within each segment to respect maxLines.
+ * Words beyond maxLines are pushed to additional lines.
+ */
+function applyMaxLines(doc: any, maxLines: number): any {
+  if (maxLines <= 0) return doc;
+  const { StructureTagger: ST } = require('./tscaps_bridge');
+  const LineCls = require('@modules/document/Line').Line;
+  const newSections = doc.sections.map((section: any) => {
+    const newSegments = section.segments.map((seg: any) => {
+      const allWords = seg.lines.flatMap((l: any) => [...l.words]);
+      if (seg.lines.length <= maxLines) return seg;
+      // Re-distribute words into maxLines lines
+      const lines: any[] = [];
+      const perLine = Math.ceil(allWords.length / maxLines);
+      for (let i = 0; i < allWords.length; i += perLine) {
+        const chunk = allWords.slice(i, i + perLine);
+        lines.push(new LineCls({ words: chunk }));
+      }
+      return seg.with({ lines });
+    });
+    return section.with({ segments: newSegments });
+  });
+  const tagged = doc.with({ sections: newSections });
+  return new ST().tag(tagged);
+}
+
+/**
+ * Extend each segment's end time to the start of the next segment
+ * (or +0.5s for the last segment) to eliminate flicker.
+ */
+function applyGapFree(doc: any): any {
+  const segments = doc.getSegments();
+  const newSections = doc.sections.map((section: any) => {
+    const newSegments = section.segments.map((seg: any, idx: number) => {
+      const nextSeg = segments[segments.indexOf(seg) + 1];
+      const newEnd = nextSeg ? nextSeg.time.start : seg.time.end + 0.5;
+      if (newEnd <= seg.time.end) return seg;
+      const TimeFragment = require('@modules/document/TimeFragment').TimeFragment;
+      return seg.with({ customTime: new TimeFragment(seg.time.start, newEnd) });
+    });
+    return section.with({ segments: newSegments });
+  });
+  return doc.with({ sections: newSections });
+}
+
 /** Bundle a template folder's style.css + its default CSS variables as
  *  inlineStyles so the engine renders identically to tscaps out of the box. */
 const TEMPLATE_VARS: Record<string, Record<string,string>> = {};
@@ -125,8 +229,16 @@ function makeRenderer(): SubtitleFrameRenderer {
 
 /** Render one frame at timestamp t (seconds) → PNG data URL. */
 export async function renderCaptionFrame(params: CaptionParams, t: number): Promise<string> {
-  const doc = await srtToDocument(params.srt);
-  const styles = buildStyle(params);
+  let doc = await srtToDocument(params.srt);
+  if (params.maxChars) doc = applyMaxChars(doc, params.maxChars);
+  if (params.maxLines) doc = applyMaxLines(doc, params.maxLines);
+  if (params.gapFree) doc = applyGapFree(doc);
+  // text_case: add CSS text-transform to inlineStyles
+  const inline = { ...(params.inlineStyles ?? {}) };
+  if (params.textCase && params.textCase !== 'none') {
+    inline['--tscaps-text-transform'] = params.textCase;
+  }
+  const styles = buildStyle({ ...params, inlineStyles: inline });
   const renderer = makeRenderer();
   await (renderer as any).open(doc, styles, params.width, params.height);
   const frame = await (renderer as any).getFrame(t);
@@ -148,8 +260,15 @@ export async function renderCaptionFrames(
   params: CaptionParams,
   fps: number = SAMPLE_FPS,
 ): Promise<string[]> {
-  const doc = await srtToDocument(params.srt);
-  const styles = buildStyle(params);
+  let doc = await srtToDocument(params.srt);
+  if (params.maxChars) doc = applyMaxChars(doc, params.maxChars);
+  if (params.maxLines) doc = applyMaxLines(doc, params.maxLines);
+  if (params.gapFree) doc = applyGapFree(doc);
+  const inline = { ...(params.inlineStyles ?? {}) };
+  if (params.textCase && params.textCase !== 'none') {
+    inline['--tscaps-text-transform'] = params.textCase;
+  }
+  const styles = buildStyle({ ...params, inlineStyles: inline });
   const renderer = makeRenderer();
   await (renderer as any).open(doc, styles, params.width, params.height);
   const end = doc.getSegments().reduce((m: number, s: any) => Math.max(m, s.time.end), 1);
@@ -179,8 +298,15 @@ export async function renderCaptionFramesToBitmaps(
   params: CaptionParams,
   fps: number = SAMPLE_FPS,
 ): Promise<ImageBitmap[]> {
-  const doc = await srtToDocument(params.srt);
-  const styles = buildStyle(params);
+  let doc = await srtToDocument(params.srt);
+  if (params.maxChars) doc = applyMaxChars(doc, params.maxChars);
+  if (params.maxLines) doc = applyMaxLines(doc, params.maxLines);
+  if (params.gapFree) doc = applyGapFree(doc);
+  const inline = { ...(params.inlineStyles ?? {}) };
+  if (params.textCase && params.textCase !== 'none') {
+    inline['--tscaps-text-transform'] = params.textCase;
+  }
+  const styles = buildStyle({ ...params, inlineStyles: inline });
   const renderer = makeRenderer();
   await (renderer as any).open(doc, styles, params.width, params.height);
   const end = doc.getSegments().reduce((m: number, s: any) => Math.max(m, s.time.end), 1);
