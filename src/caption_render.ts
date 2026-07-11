@@ -15,6 +15,10 @@ import {
   GraphemeWordSplitter,
   StructureTagger,
 } from './tscaps_bridge';
+import { Document } from '@modules/document/Document';
+import { Segment } from '@modules/document/Segment';
+import { Line } from '@modules/document/Line';
+import { TimeFragment } from '@modules/document/TimeFragment';
 import type {
   SubtitleStyle,
   SubtitleFrameRenderer,
@@ -96,9 +100,8 @@ export async function srtToDocument(srt: string): Promise<any> {
  * Re-split segments that exceed maxChars by distributing words into
  * new segments while preserving timing (words keep their original time).
  */
-function applyMaxChars(doc: any, maxChars: number): any {
+function applyMaxChars(doc: Document, maxChars: number): Document {
   if (maxChars <= 0) return doc;
-  const { StructureTagger: ST } = require('./tscaps_bridge');
   const newSections = doc.sections.map((section: any) => {
     const newSegments: any[] = [];
     for (const seg of section.segments) {
@@ -125,7 +128,7 @@ function applyMaxChars(doc: any, maxChars: number): any {
     return section.with({ segments: newSegments });
   });
   const tagged = doc.with({ sections: newSections });
-  return new ST().tag(tagged);
+  return new StructureTagger().tag(tagged);
 }
 
 /** Get total character count of words (space-separated). */
@@ -133,25 +136,19 @@ function getTextLen(words: any[]): number {
   return words.reduce((sum, w) => sum + w.displayText.length, 0) + Math.max(0, words.length - 1);
 }
 
-/** Create a Segment from an array of words, distributing time proportionally. */
+/** Create a Segment from an array of words, preserving original segment timing. */
 function makeSegment(words: any[], segStart: number, segEnd: number): any {
-  const { Line } = require('./tscaps_bridge');
-  // Each word is its own line (letter-level splitting handles display)
   const lines = words.map((w: any) => new Line({ words: [w] }));
-  // Set customTime to preserve original segment timing
-  const time = new (require('@modules/document/TimeFragment').TimeFragment)(segStart, segEnd);
-  const seg = new (require('@modules/document/Segment').Segment)({ lines, customTime: time });
-  return seg;
+  const time = new TimeFragment(segStart, segEnd);
+  return new Segment({ lines, customTime: time });
 }
 
 /**
  * Re-split lines within each segment to respect maxLines.
  * Words beyond maxLines are pushed to additional lines.
  */
-function applyMaxLines(doc: any, maxLines: number): any {
+function applyMaxLines(doc: Document, maxLines: number): Document {
   if (maxLines <= 0) return doc;
-  const { StructureTagger: ST } = require('./tscaps_bridge');
-  const LineCls = require('@modules/document/Line').Line;
   const newSections = doc.sections.map((section: any) => {
     const newSegments = section.segments.map((seg: any) => {
       const allWords = seg.lines.flatMap((l: any) => [...l.words]);
@@ -161,28 +158,27 @@ function applyMaxLines(doc: any, maxLines: number): any {
       const perLine = Math.ceil(allWords.length / maxLines);
       for (let i = 0; i < allWords.length; i += perLine) {
         const chunk = allWords.slice(i, i + perLine);
-        lines.push(new LineCls({ words: chunk }));
+        lines.push(new Line({ words: chunk }));
       }
       return seg.with({ lines });
     });
     return section.with({ segments: newSegments });
   });
   const tagged = doc.with({ sections: newSections });
-  return new ST().tag(tagged);
+  return new StructureTagger().tag(tagged);
 }
 
 /**
  * Extend each segment's end time to the start of the next segment
  * (or +0.5s for the last segment) to eliminate flicker.
  */
-function applyGapFree(doc: any): any {
+function applyGapFree(doc: Document): Document {
   const segments = doc.getSegments();
   const newSections = doc.sections.map((section: any) => {
-    const newSegments = section.segments.map((seg: any, idx: number) => {
+    const newSegments = section.segments.map((seg: any) => {
       const nextSeg = segments[segments.indexOf(seg) + 1];
       const newEnd = nextSeg ? nextSeg.time.start : seg.time.end + 0.5;
       if (newEnd <= seg.time.end) return seg;
-      const TimeFragment = require('@modules/document/TimeFragment').TimeFragment;
       return seg.with({ customTime: new TimeFragment(seg.time.start, newEnd) });
     });
     return section.with({ segments: newSegments });
