@@ -55,9 +55,10 @@ export interface CaptionParams {
   outline?: number;
   /** Outline (text stroke) color. Drives --tscaps-outline-color. */
   outlineColor?: string;
-  /** Outline corner style: "flat" (centered stroke, default), "rounded"
-   *  (soft blurred halo), or "sharp" (hard pointed outline via text-shadow). */
-  outlineStyle?: string;
+  /** Outline corner style: boolean. false = flat (centered stroke,
+   *  default); true = sharp (hard pointed outline via feMorphology filter
+   *  in preview / 8-copy text-shadow in headless export). "rounded" removed. */
+  outlineStyle?: boolean;
   gapFree?: boolean;
   /** @font-face CSS (with data: URIs) so fonts render inside the SVG
    *  foreignObject isolated document context. Pre-inlined by the caller
@@ -252,33 +253,28 @@ function buildInlineVars(params: CaptionParams): Record<string, string> {
   if (params.textCase && params.textCase !== 'none') {
     inline['--tscaps-text-transform'] = params.textCase;
   }
-  // Outline: width + color, applied in one of three corner styles.
-  //  • flat   → centered -webkit-text-stroke (one clean stroke, default look)
-  //  • rounded→ soft blurred text-shadow halo (export path; preview uses filter)
-  //  • sharp  → hard 8-direction text-shadow (pointed / lancip corners)
+  // Outline: width + color, applied in one of two corner styles.
+  //  • flat  → centered -webkit-text-stroke (one clean stroke, default look)
+  //  • sharp → hard 8-direction text-shadow (pointed / lancip corners).
   //
   // The 8-copy text-shadow is the standard CSS outline technique and renders
   // as a SOLID outline in the headless export (rasterized once). In the
   // live-DOM PREVIEW it could look doubled at large sizes, so mountLiveCaption
-  // strips these vars for sharp/rounded and applies a single feMorphology SVG
-  // filter instead (no duplication, true pointed corners).
+  // strips these vars for sharp and applies a single feMorphology SVG filter
+  // instead (no duplication, true pointed corners). "rounded" removed.
   if (params.outline != null && params.outline > 0) {
     const w = `${params.outline}em`;
     const c = params.outlineColor || '#000';
-    const mode = (params.outlineStyle || 'flat').toLowerCase();
-    if (mode === 'flat') {
+    const sharp = params.outlineStyle === true || params.outlineStyle === 'sharp';
+    if (!sharp) { // flat
       inline['--tscaps-outline-width'] = w;
       inline['--tscaps-outline-color'] = c;
-    } else {
+    } else { // sharp / lancip
       inline['--tscaps-outline-width'] = '0em';
       inline['--tscaps-outline-color'] = c;
-      if (mode === 'rounded') {
-        inline['--tscaps-outline-shadow'] = `0 0 calc(${w} * 1.6) ${c}`;
-      } else { // sharp / lancip
-        inline['--tscaps-outline-shadow'] =
-          `${w} 0 0 ${c}, -${w} 0 0 ${c}, 0 ${w} 0 ${c}, 0 -${w} 0 ${c}, ` +
-          `${w} ${w} 0 ${c}, -${w} ${w} 0 ${c}, ${w} -${w} 0 ${c}, -${w} -${w} 0 ${c}`;
-      }
+      inline['--tscaps-outline-shadow'] =
+        `${w} 0 0 ${c}, -${w} 0 0 ${c}, 0 ${w} 0 ${c}, 0 -${w} 0 ${c}, ` +
+        `${w} ${w} 0 ${c}, -${w} ${w} 0 ${c}, ${w} -${w} 0 ${c}, -${w} -${w} 0 ${c}`;
     }
   }
   return inline;
@@ -521,31 +517,28 @@ export async function mountLiveCaption(
   const inline = buildInlineVars(opts);
   const fullCss = (opts.fontCss ? opts.fontCss + '\n' : '') + (opts.css || '');
 
-  // ── Sharp / rounded outline via SVG feMorphology (preview-only) ──────────
+  // ── Sharp outline via SVG feMorphology (preview-only) ───────────────────
   // -webkit-text-stroke cannot produce a pointed ("sharp") corner — its join
   // is fixed to the glyph outline, so a single stroke always looks slightly
   // rounded, and faking "lancip" with 8 text-shadow copies just duplicates
   // the glyph (ghost / double image). Instead we inject ONE <filter> that
   // dilates the text's alpha mask (feMorphology operator="dilate") and
-  // floods it with the outline color behind the original text (feMerge). For
-  // 'rounded' we add a tiny feGaussianBlur; for 'sharp' we leave it hard. One
+  // floods it with the outline color behind the original text (feMerge). One
   // operation, correct thickness, uniform crisp edge, ZERO duplication.
   // (Headless export keeps the standard 8-copy text-shadow from buildInlineVars
-  // for these modes — see note there. Preview-only = no ghosting.)
+  // for sharp — see note there. Preview-only = no ghosting.)
   let outlineFilterId: string | null = null;
   let outlineSvg: SVGSVGElement | null = null;
   if (opts.outline != null && opts.outline > 0) {
-    const mode = (opts.outlineStyle || 'flat').toLowerCase();
-    if (mode === 'sharp' || mode === 'rounded') {
-      // Neutralize the 8-copy text-shadow vars so the preview shows ONLY our
+    const sharp = opts.outlineStyle === true || opts.outlineStyle === 'sharp';
+    if (sharp) {
+      // Neutralize the 8-copy text-shadow var so the preview shows ONLY our
       // filter (no double image). flat keeps the centered stroke as-is.
       delete inline['--tscaps-outline-shadow'];
       const ow = Math.max(0, parseFloat(String(opts.outline)) || 0);
       const oc = opts.outlineColor || '#000';
       const fid = `tscaps-outline-${Math.random().toString(36).slice(2, 9)}`;
       outlineFilterId = fid;
-      const blur = mode === 'rounded' ? '<feGaussianBlur in="d" stdDeviation="1" result="db"/>' : '';
-      const dilateResult = mode === 'rounded' ? 'db' : 'd';
       const svgNS = 'http://www.w3.org/2000/svg';
       const svg = document.createElementNS(svgNS, 'svg');
       svg.setAttribute('width', '0');
@@ -557,9 +550,8 @@ export async function mountLiveCaption(
       svg.innerHTML =
         `<defs><filter id="${fid}" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">` +
         `<feMorphology in="SourceAlpha" operator="dilate" radius="${ow}" result="d"/>` +
-        blur +
         `<feFlood flood-color="${oc}" result="c"/>` +
-        `<feComposite in="c" in2="${dilateResult}" operator="in" result="outline"/>` +
+        `<feComposite in="c" in2="d" operator="in" result="outline"/>` +
         `<feMerge><feMergeNode in="outline"/><feMergeNode in="SourceGraphic"/></feMerge>` +
         `</filter></defs>`;
       outlineSvg = svg;
@@ -609,9 +601,8 @@ export async function mountLiveCaption(
     // on the wrapper — mirrors the engine's composeWrapperStyle (root vars
     // live on the wrapper; per-frame timing vars go on .segment in seek()).
     for (const [k, v] of Object.entries(inline)) wrapper.style.setProperty(k, v);
-    // For sharp/rounded outline we apply the feMorphology SVG filter directly
-    // to .segment (preview-only). It needs a non-static position context to
-    // take effect on the painted text; `filter` works fine on a static div.
+    // For sharp outline we apply the feMorphology SVG filter directly to
+    // .segment (preview-only). flat keeps the centered stroke as-is.
     if (outlineFilterId) segEl.style.filter = `url(#${outlineFilterId})`;
     // Karaoke timing variables are applied per-frame in seek(); the engine
     // freezes each CSS animation at the current playback position by pausing

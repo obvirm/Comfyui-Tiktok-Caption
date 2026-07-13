@@ -152,9 +152,11 @@ class TikTokCaptionNode:
                 "outline": ("FLOAT", {"default": 0.02, "min": 0.0, "max": 0.5, "step": 0.01}),
                 # Outline (text stroke) color. Empty = use CSS/template default (#000).
                 "outline_color": ("STRING", {"default": "", "multiline": False}),
-                # Outline corner style: flat (centered stroke), rounded (soft
-                # halo), sharp (hard pointed / lancip outline via text-shadow).
-                "outline_style": (["flat", "rounded", "sharp"], {"default": "flat"}),
+                # Outline corner style: boolean. False = flat (centered
+                # -webkit-text-stroke, default). True = sharp (hard pointed /
+                # lancip outline: single feMorphology SVG filter in preview,
+                # 8-copy text-shadow in headless export).
+                "outline_style": ("BOOLEAN", {"default": False, "label_on": "sharp", "label_off": "flat"}),
                 # template LAST so older workflows (srt,css,w,h) keep mapping
                 "template": (template_names, {"default": "(none / custom)"}),
             },
