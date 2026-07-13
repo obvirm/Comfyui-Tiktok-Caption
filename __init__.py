@@ -158,10 +158,14 @@ class TikTokCaptionNode:
                 "outline": ("FLOAT", {"default": 0.02, "min": 0.0, "max": 0.5, "step": 0.01}),
                 "outline_color": ("STRING", {"default": "", "multiline": False}),
                 "outline_style": ("BOOLEAN", {"default": False, "label_on": "sharp", "label_off": "flat"}),
-                # ── LAYOUT (segmentation / karaoke) ──
-                "split_words_into_letters": ("BOOLEAN", {"default": False}),
-                "max_words": ("INT", {"default": 12, "min": 1, "max": 50, "step": 1}),
-                "max_lines": ("INT", {"default": 2, "min": 1, "max": 5, "step": 1}),
+                # ── LAYOUT (tscaps Scenes + Lines splitters) ──
+                "split_by_speaker": ("BOOLEAN", {"default": False}),
+                "split_by": (["(auto)", "none", "sentence", "clause"], {"default": "(auto)"}),
+                "max_letters": ("INT", {"default": 0, "min": 0, "max": 200, "step": 1}),
+                "min_letters": ("INT", {"default": 0, "min": 0, "max": 200, "step": 1}),
+                "lines_max": ("INT", {"default": 0, "min": 0, "max": 8, "step": 1}),
+                "lines_min": ("INT", {"default": 0, "min": 0, "max": 8, "step": 1}),
+                "max_line_width": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.05}),
                 "gap_free": ("BOOLEAN", {"default": False}),
                 # ── CODE (raw CSS override + template) ──
                 "css": ("STRING", {"multiline": True, "default": DEFAULT_CSS}),
@@ -183,8 +187,8 @@ class TikTokCaptionNode:
                 italic, underline, strikethrough, vertical_align, vertical_offset,
                 horizontal_align, horizontal_offset, rotation, text_color,
                 highlight_color, outline, outline_color, outline_style,
-                split_words_into_letters, max_words, max_lines, gap_free, css,
-                template, preview_image=None):
+                split_by_speaker, split_by, max_letters, min_letters, lines_max,
+                lines_min, max_line_width, gap_free, css, template, preview_image=None):
         import torch, numpy as np
         from PIL import Image
         # Self-heal stale/positional-mismatched numeric inputs.
@@ -277,14 +281,50 @@ class TikTokCaptionNode:
             "horizontalAlign": horizontal_align,
             "horizontalOffset": float(horizontal_offset),
         }
+        # Build the tscaps-native Layout map from the Scenes/Lines widgets.
+        layout = {}
+        if split_by_speaker:
+            layout['splitBySpeaker'] = True
+        if split_by and split_by != '(auto)':
+            layout['boundaryMode'] = split_by
+        try:
+            ml = int(max_letters)
+        except Exception:
+            ml = 0
+        if ml and ml > 0:
+            layout['maxLetters'] = ml
+        try:
+            mn = int(min_letters)
+        except Exception:
+            mn = 0
+        if mn and mn > 0:
+            layout['minLetters'] = mn
+        try:
+            lmax = int(lines_max)
+        except Exception:
+            lmax = 0
+        if lmax and lmax > 0:
+            layout['maxLines'] = lmax
+        try:
+            lmin = int(lines_min)
+        except Exception:
+            lmin = 0
+        if lmin and lmin > 0:
+            layout['minLines'] = lmin
+        try:
+            mlw = float(max_line_width)
+        except Exception:
+            mlw = 0.0
+        if mlw and mlw > 0:
+            layout['maxLineWidth'] = mlw
         return self._render(css, inline_styles, alignment, srt, width, height,
-                           split_words_into_letters, text_case if text_case != "(auto)" else "none",
-                           max_words, max_lines, gap_free, embed_font, outline,
+                           text_case if text_case != "(auto)" else "none",
+                           layout, gap_free, embed_font, outline,
                            outline_color, outline_style)
 
     def _render(self, css, inline_styles, alignment, srt, width, height,
-                split_words_into_letters=False, text_case="none",
-                max_words=12, max_lines=2, gap_free=False, font_family="",
+                text_case="none",
+                layout=None, gap_free=False, font_family="",
                 outline=0.02, outline_color="", outline_style="flat"):
         import torch, numpy as np
         from PIL import Image
@@ -294,8 +334,8 @@ class TikTokCaptionNode:
                     torch.zeros((1, height, width), dtype=torch.float32))
         try:
             pngs = render_frames(srt, css, width, height, inline_styles=inline_styles,
-                                alignment=alignment, split_words_into_letters=split_words_into_letters,
-                                 text_case=text_case, max_words=max_words, max_lines=max_lines,
+                                alignment=alignment,
+                                 text_case=text_case, layout=layout,
                                  gap_free=gap_free, outline=outline, outline_color=outline_color,
                                  font_family=font_family, outline_style=outline_style)
             if not pngs:

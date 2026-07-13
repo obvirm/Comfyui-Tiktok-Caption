@@ -5,6 +5,12 @@
  * final renderer (CloakBrowser) so preview === output (1:1).
  */
 import { SrtTranscriber } from '@modules/transcription/SrtTranscriber';
+import {
+  BoundarySegmentSplitter,
+  LimitByCharsSegmentSplitter,
+  SpeakerChangeSegmentSplitter,
+  BalancedLineSplitter,
+} from '@modules/splitting';
 // Polyfill crypto.randomUUID for headless Chromium contexts that lack it
 try { if (typeof crypto !== 'undefined' && !crypto.randomUUID) {
   (crypto as any).randomUUID = () => 'id-' + Math.random().toString(16).slice(2);
@@ -63,10 +69,10 @@ export interface CaptionParams {
   };
   splitWordsIntoLetters?: boolean;
   textCase?: string;
-  /** Max WORDS per caption segment. Splits an over-long SRT segment into
-   *  sub-segments so each shows at most this many words (not characters). */
-  maxWords?: number;
-  maxLines?: number;
+  /** tscaps-native Layout controls (Scenes + Lines splitters). Mirrors the
+   *  tscaps editor Layout tab. All fields optional; omitted fields leave the
+   *  segment/line grouping as the SRT authored it. */
+  layout?: LayoutParams;
   /** Outline (text stroke) width in em. Drives --tscaps-outline-width.
    *  0 = no outline. */
   outline?: number;
@@ -97,6 +103,26 @@ export interface CaptionParams {
    * every card in tscaps's template library shows.
    */
   usePreviewMock?: boolean;
+}
+
+/** tscaps-native Layout controls (Scenes + Lines splitters). Mirrors the
+ *  tscaps editor Layout tab. All fields optional; omitted fields leave the
+ *  segment/line grouping exactly as the source SRT authored it. */
+export interface LayoutParams {
+  /** Scenes: "Split scenes by speaker" toggle (mono-speaker boundaries). */
+  splitBySpeaker?: boolean;
+  /** Scenes: "Split scenes by" boundary mode → sentence / clause / none. */
+  boundaryMode?: 'none' | 'sentence' | 'clause';
+  /** Scenes: Max letters per scene (limit_by_chars maxChars). 0 = off. */
+  maxLetters?: number;
+  /** Scenes: Min letters per scene (limit_by_chars minChars). 0 = off. */
+  minLetters?: number;
+  /** Lines: max lines per scene. 0 = off. */
+  maxLines?: number;
+  /** Lines: min lines per scene. 0 = off. */
+  minLines?: number;
+  /** Lines: max line width as a fraction of frame width (0..1). 0 = off. */
+  maxLineWidth?: number;
 }
 
 /** Internal sampling rate (frames per second of caption timeline).
@@ -153,77 +179,73 @@ export async function srtToDocument(srt: string): Promise<any> {
 // ── Document post-processing helpers ──────────────────────────────────
 
 /**
- * Re-flow the transcript into chunks of at most `maxWords` words. Unlike a
- * pure splitter this MERGES short SRT cues AND splits long ones, so
- * `maxWords` is a true "words per caption" control: a 3-word SRT line no
- * longer caps the caption at 3 — raising maxWords shows more words by
- * pulling in neighbouring cues. Each word KEEPS its original timestamp (the
- * karaoke/word-by-word timing is preserved); only the caption grouping and
- * the visible span of each caption change.
+ * tscaps-native Layout pipeline. Mirrors the tscaps editor Layout tab:
+ *   SCENES (segment splitters, run in order):
+ *     1. SpeakerChangeSegmentSplitter  — split scenes by speaker
+ *     2. BoundarySegmentSplitter       — split at sentence/clause punctuation
+ *     3. LimitByCharsSegmentSplitter    — max/min letters per scene
+ *   LINES (line splitter, run after segments):
+ *     4. BalancedLineSplitter           — max/min lines, max line width (px)
+ * Each splitter is a no-op when its controlling field is 0/'(auto)'/off,
+ * so an untouched Layout leaves the source SRT grouping exactly as authored.
+ * Word timings (karaoke) are preserved because the splitters only regroup
+ * the existing Word objects — they never re-time anything.
  */
-function applyMaxWords(doc: Document, maxWords: number): Document {
-  if (maxWords <= 0) return doc;
-  // Flatten every word (with its original time) across all sections/cues.
-  const allWords: any[] = [];
-  for (const section of doc.sections) {
-    for (const seg of section.segments) {
-      for (const line of seg.lines) {
-        for (const w of line.words) allWords.push(w);
-      }
-    }
+function applyLayout(doc: Document, layout: LayoutParams | undefined): Document {
+  if (!layout) return doc;
+  let d = doc;
+  // 1) split by speaker
+  if (layout.splitBySpeaker) {
+    d = applySplitter(d, SpeakerChangeSegmentSplitter, true);
   }
-  if (allWords.length === 0) return doc;
-  // Group words into chunks of maxWords (merge short cues, split long ones).
-  const chunks: any[][] = [];
-  for (let i = 0; i < allWords.length; i += maxWords) {
-    chunks.push(allWords.slice(i, i + maxWords));
+  // 2) boundary punctuation
+  const mode = layout.boundaryMode;
+  if (mode === 'sentence') {
+    d = applySplitter(d, BoundarySegmentSplitter, { separators: ['.', '!', '?'] });
+  } else if (mode === 'clause') {
+    d = applySplitter(d, BoundarySegmentSplitter, { separators: ['.', '!', '?', ',', ';', ':'] });
   }
-  // Each chunk becomes one caption; its visible span is from the first
-  // word's start to the last word's end. Words keep their own timestamps.
-  const newSegments = chunks.map((chunk) => {
-    const start = chunk[0].time.start;
-    const end = chunk[chunk.length - 1].time.end;
-    return makeSegment(chunk, start, end);
-  });
-  const SectionCtor: any = (doc.sections[0] as any).constructor;
-  const newSection = new SectionCtor({ segments: newSegments, kind: '' });
-  return new StructureTagger().tag(doc.with({ sections: [newSection] }));
-}
-
-/** Create a Segment from an array of words on a single line. */
-function makeSegment(words: any[], segStart: number, segEnd: number): any {
-  const line = new Line({ words });
-  const time = new TimeFragment(segStart, segEnd);
-  return new Segment({ lines: [line], customTime: time });
-}
-
-/**
- * Re-split lines within each segment to respect maxLines. Catches both
- * segments that already exceed maxLines AND long single-line segments (e.g.
- * produced by applyMaxWords) so the caption wraps into at most maxLines lines.
- */
-function applyMaxLines(doc: Document, maxLines: number): Document {
-  if (maxLines <= 0) return doc;
-  const newSections = doc.sections.map((section: any) => {
-    const newSegments = section.segments.map((seg: any) => {
-      const allWords = seg.lines.flatMap((l: any) => [...l.words]);
-      // Already within limits (both line count and word count) → leave as-is.
-      if (seg.lines.length <= maxLines && allWords.length <= maxLines) return seg;
-      if (allWords.length <= 1) return seg;
-      // Distribute words into at most maxLines lines.
-      const n = Math.min(maxLines, allWords.length);
-      const perLine = Math.ceil(allWords.length / n);
-      const lines: any[] = [];
-      for (let i = 0; i < allWords.length; i += perLine) {
-        const chunk = allWords.slice(i, i + perLine);
-        lines.push(new Line({ words: chunk }));
-      }
-      return seg.with({ lines });
+  // 3) max/min letters per scene
+  if (layout.maxLetters && layout.maxLetters > 0) {
+    d = applySplitter(d, LimitByCharsSegmentSplitter, {
+      maxChars: layout.maxLetters,
+      minChars: layout.minLetters && layout.minLetters > 0 ? layout.minLetters : 0,
+      minDuration: 0,
+      minLastWordDuration: 0,
     });
-    return section.with({ segments: newSegments });
-  });
-  const tagged = doc.with({ sections: newSections });
-  return new StructureTagger().tag(tagged);
+  }
+  // 4) lines
+  if (layout.maxLines && layout.maxLines > 0) {
+    const maxWidthRatio = layout.maxLineWidth && layout.maxLineWidth > 0 ? layout.maxLineWidth : 0.8;
+    d = applyLineSplitter(d, BalancedLineSplitter, {
+      maxLines: layout.maxLines,
+      minLines: layout.minLines && layout.minLines > 0 ? layout.minLines : 1,
+      maxCharsPerLine: Math.max(8, Math.round((layout.maxLetters && layout.maxLetters > 0 ? layout.maxLetters : 28))),
+      // maxLineWidth is a fraction of frame width; tscaps uses a pixel measurer
+      // but for our static render we approximate via maxCharsPerLine derived
+      // from the width fraction could be added later. Keep maxCharsPerLine.
+      _maxWidthRatio: maxWidthRatio,
+    });
+  }
+  return new StructureTagger().tag(d);
+}
+
+/** Run a SegmentSplitter over the document, returning a freshly built doc. */
+function applySplitter(doc: Document, Ctor: any, config: any): Document {
+  const splitter = new Ctor(config);
+  const segments = splitter.split(doc.getSegments());
+  const SectionCtor: any = (doc.sections[0] as any).constructor;
+  const newSection = new SectionCtor({ segments, kind: doc.sections[0].kind });
+  return doc.with({ sections: [newSection] });
+}
+
+/** Run a LineSplitter over the document, returning a freshly built doc. */
+function applyLineSplitter(doc: Document, Ctor: any, config: any): Document {
+  const splitter = new Ctor(config);
+  const segments = splitter.split(doc.getSegments());
+  const SectionCtor: any = (doc.sections[0] as any).constructor;
+  const newSection = new SectionCtor({ segments, kind: doc.sections[0].kind });
+  return doc.with({ sections: [newSection] });
 }
 
 /**
@@ -330,8 +352,7 @@ function makeRenderer(): SubtitleFrameRenderer {
 /** Render one frame at timestamp t (seconds) → PNG data URL. */
 export async function renderCaptionFrame(params: CaptionParams, t: number): Promise<string> {
   let doc = await srtToDocument(params.srt);
-  if (params.maxWords) doc = applyMaxWords(doc, params.maxWords);
-  if (params.maxLines) doc = applyMaxLines(doc, params.maxLines);
+  if (params.layout) doc = applyLayout(doc, params.layout);
   if (params.gapFree) doc = applyGapFree(doc);
   const styles = buildStyle(params);
   const renderer = makeRenderer();
@@ -356,8 +377,7 @@ export async function renderCaptionFrames(
   fps: number = SAMPLE_FPS,
 ): Promise<string[]> {
   let doc = await srtToDocument(params.srt);
-  if (params.maxWords) doc = applyMaxWords(doc, params.maxWords);
-  if (params.maxLines) doc = applyMaxLines(doc, params.maxLines);
+  if (params.layout) doc = applyLayout(doc, params.layout);
   if (params.gapFree) doc = applyGapFree(doc);
   const styles = buildStyle(params);
   const renderer = makeRenderer();
@@ -390,8 +410,7 @@ export async function renderCaptionFramesToBitmaps(
   fps: number = SAMPLE_FPS,
 ): Promise<ImageBitmap[]> {
   let doc = await srtToDocument(params.srt);
-  if (params.maxWords) doc = applyMaxWords(doc, params.maxWords);
-  if (params.maxLines) doc = applyMaxLines(doc, params.maxLines);
+  if (params.layout) doc = applyLayout(doc, params.layout);
   if (params.gapFree) doc = applyGapFree(doc);
   const styles = buildStyle(params);
   const renderer = makeRenderer();
@@ -530,8 +549,7 @@ export async function mountLiveCaption(
   } else {
     doc = await srtToDocument(opts.srt);
   }
-  if (opts.maxWords) doc = applyMaxWords(doc, opts.maxWords);
-  if (opts.maxLines) doc = applyMaxLines(doc, opts.maxLines);
+  if (opts.layout) doc = applyLayout(doc, opts.layout);
   if (opts.gapFree) doc = applyGapFree(doc);
 
   const inline = buildInlineVars(opts);

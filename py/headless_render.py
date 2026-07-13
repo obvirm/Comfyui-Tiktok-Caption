@@ -95,7 +95,7 @@ def _build_google_font_css(family: str) -> str:
 
 def render_frames(srt: str, css: str, width: int, height: int, inline_styles: dict = None,
                    alignment: dict = None, split_words_into_letters: bool = False,
-                   text_case: str = "none", max_words: int = 12, max_lines: int = 2,
+                   text_case: str = "none", layout: dict = None,
                     gap_free: bool = False, outline: float = 0.02, outline_color: str = "",
                     font_family: str = "", outline_style: str = "flat") -> list:
     """Render all caption frames → list of PNG bytes (same engine as preview).
@@ -117,8 +117,7 @@ def render_frames(srt: str, css: str, width: int, height: int, inline_styles: di
         "inlineStyles": inline_styles or {},
         "splitWordsIntoLetters": split_words_into_letters,
         "textCase": text_case,
-        "maxWords": max_words,
-        "maxLines": max_lines,
+        "layout": layout,
         "gapFree": gap_free,
         "outline": outline,
         "outlineColor": outline_color,

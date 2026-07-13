@@ -294,11 +294,23 @@ function setupWidget(node: any): void {
     if (text_color) inline['--tscaps-primary-color'] = text_color;
     const highlight_color = String(getWidgetVal(node, 'highlight_color') || '').trim();
     if (highlight_color) inline['--tscaps-highlight-color'] = highlight_color;
-    // ── LAYOUT ──
+    // ── LAYOUT (tscaps Scenes + Lines) ──
     const splitLetters = !!getWidgetVal(node, 'split_words_into_letters');
-    const maxWords = parseInt(getWidgetVal(node, 'max_words') || '12') || 12;
-    const maxLines = parseInt(getWidgetVal(node, 'max_lines') || '2') || 2;
     const gapFree = !!getWidgetVal(node, 'gap_free');
+    const layout: any = {};
+    if (getWidgetVal(node, 'split_by_speaker')) layout.splitBySpeaker = true;
+    const splitBy = getWidgetVal(node, 'split_by');
+    if (splitBy && splitBy !== '(auto)') layout.boundaryMode = splitBy;
+    const maxLetters = parseInt(getWidgetVal(node, 'max_letters') || '0') || 0;
+    if (maxLetters > 0) layout.maxLetters = maxLetters;
+    const minLetters = parseInt(getWidgetVal(node, 'min_letters') || '0') || 0;
+    if (minLetters > 0) layout.minLetters = minLetters;
+    const linesMax = parseInt(getWidgetVal(node, 'lines_max') || '0') || 0;
+    if (linesMax > 0) layout.maxLines = linesMax;
+    const linesMin = parseInt(getWidgetVal(node, 'lines_min') || '0') || 0;
+    if (linesMin > 0) layout.minLines = linesMin;
+    const maxLineWidth = parseFloat(getWidgetVal(node, 'max_line_width') || '0') || 0;
+    if (maxLineWidth > 0) layout.maxLineWidth = maxLineWidth;
     // outline (text stroke): width in em + color.
     const outline = parseFloat(getWidgetVal(node, 'outline') || '0.02') || 0;
     const outlineColor = String(getWidgetVal(node, 'outline_color') || '').trim();
@@ -362,7 +374,7 @@ function setupWidget(node: any): void {
       // same engine Document model, so the look matches the export.
       liveHandle = await mountLiveCaption(liveHost, {
         srt, css, width: pw, height: ph, inlineStyles: inline, alignment,
-        splitWordsIntoLetters: splitLetters, textCase, maxWords, maxLines, gapFree,
+        splitWordsIntoLetters: splitLetters, textCase, layout, gapFree,
         outline, outlineColor, outlineStyle, fontCss,
         // Scope the template CSS to this node's host so :root / top-level
         // selectors (e.g. .caption-word color) don't leak document-wide and
