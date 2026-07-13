@@ -74,6 +74,23 @@ except Exception as e:
     render_frames = None
     template_loader = None
 
+# ── tscaps-native font catalog ──────────────────────────────────────────
+# Mirrors vendored tscaps-ui/core/fonts/domain/FontCatalog.ts so the node's
+# font picker offers exactly the same families tscaps ships. Values keep the
+# "<Name> Variable" suffix the @font-face uses; _norm_font strips it for the
+# Google Fonts query.
+FONT_CATALOG = [
+   "Inter Variable", "Poppins", "Montserrat Variable", "Roboto", "Anton",
+    "Bebas Neue", "Bangers", "Komika Axis", "Manrope Variable",
+    "Nunito Variable", "Raleway Variable", "DM Sans Variable",
+    "Comfortaa Variable", "Bricolage Grotesque Variable", "Oswald Variable",
+    "Bungee", "Righteous", "Playfair Display Variable", "EB Garamond Variable",
+    "DM Serif Display", "Fraunces Variable", "Lora Variable",
+    "Dancing Script Variable", "Pacifico", "Lobster", "Caveat Variable",
+    "Permanent Marker", "JetBrains Mono Variable", "VT323", "Press Start 2P",
+]
+FONT_OPTIONS = ["(template default)"] + FONT_CATALOG
+
 # ── Font CSS proxy ─────────────────────────────────────────────────────
 # Served same-origin (under /api/) so the in-node preview can load a custom
 # Google Font even when a reverse proxy in front of ComfyUI blocks the
@@ -111,59 +128,47 @@ class TikTokCaptionNode:
         template_names = ["(none / custom)"] + template_loader.list_templates()
         return {
             "required": {
+                # ── Transcript (only non-style input) ──
                 "srt": ("STRING", {"multiline": True, "default": DEFAULT_SRT}),
-                "css": ("STRING", {"multiline": True, "default": DEFAULT_CSS}),
-                # width/height min lowered to 1 so a stale positional mapping
-                # (old template slot -> these) with value 0 self-heals to default.
+                # ── Output frame ──
                 "width": ("INT", {"default": 540, "min": 1, "max": 4096}),
                 "height": ("INT", {"default": 960, "min": 1, "max": 4096}),
-                # font_size in cqh (% of frame height). 0 = use template/CSS default.
-                "font_size": ("FLOAT", {"default": 4.0, "min": 0.0, "max": 100.0, "step": 0.5}),
-                # Caption anchor inside the frame. Defaults match the engine's
-                # DEFAULT_ALIGNMENT so existing renders are unchanged.
+                # ── TYPOGRAPHY (tscaps TypographyConfig) ──
+                # 0 / (auto) = leave the template/CSS default untouched.
+                "font_family": (FONT_OPTIONS, {"default": "(template default)"}),
+                "font_size": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 100.0, "step": 0.5}),
+                "font_weight": ("INT", {"default": 0, "min": 0, "max": 900, "step": 100}),
+                "letter_spacing": ("FLOAT", {"default": 0.0, "min": -0.2, "max": 0.5, "step": 0.005}),
+                "word_spacing": ("FLOAT", {"default": 0.0, "min": -0.5, "max": 1.0, "step": 0.01}),
+                "line_spacing": ("FLOAT", {"default": 0.0, "min": -0.5, "max": 1.0, "step": 0.01}),
+                "text_align": (["(auto)", "left", "center", "right"], {"default": "(auto)"}),
+                "text_case": (["(auto)", "none", "uppercase", "lowercase"], {"default": "(auto)"}),
+                "italic": (["(auto)", "on", "off"], {"default": "(auto)"}),
+                "underline": (["(auto)", "on", "off"], {"default": "(auto)"}),
+                "strikethrough": (["(auto)", "on", "off"], {"default": "(auto)"}),
+                # ── POSITION (tscaps AlignmentConfig) ──
                 "vertical_align": (["top", "center", "bottom"], {"default": "bottom"}),
                 "vertical_offset": ("FLOAT", {"default": 0.85, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "horizontal_align": (["left", "center", "right"], {"default": "center"}),
                 "horizontal_offset": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
+                # ── EFFECT (tscaps RotationConfig + colors + outline) ──
                 "rotation": ("FLOAT", {"default": 0.0, "min": -180.0, "max": 180.0, "step": 1.0}),
                 "text_color": ("STRING", {"default": "", "multiline": False}),
                 "highlight_color": ("STRING", {"default": "", "multiline": False}),
-                # Split each word into per-letter <span> elements for
-                # letter-level CSS animations (wave, typewriter, bounce).
-                "split_words_into_letters": ("BOOLEAN", {"default": False}),
-                # Text case transform. Applied via CSS text-transform.
-                "text_case": (["none", "lowercase", "capitalize", "uppercase"], {"default": "none"}),
-                # Max words per caption segment. Controls caption density.
-                "max_words": ("INT", {"default": 12, "min": 1, "max": 50, "step": 1}),
-                # Max lines per segment. 1 = TikTok single-line, 2 = balanced, 3 = long.
-                "max_lines": ("INT", {"default": 2, "min": 1, "max": 5, "step": 1}),
-                # Gap-free: extend segment end time to eliminate flicker between captions.
-                "gap_free": ("BOOLEAN", {"default": False}),
-                # Font family dropdown. Overrides the template's default font.
-                "font_family": ([
-                    "(template default)", "Anton", "Bebas Neue", "Bungee",
-                    "Bricolage Grotesque Variable", "Caveat Variable",
-                    "Inter Variable", "JetBrains Mono Variable",
-                    "Lora Variable", "Montserrat", "Noto Sans",
-                    "Playfair Display Variable", "Roboto", "Rubik",
-                    "Space Grotesque Variable", "Work Sans Variable",
-                ], {"default": "(template default)"}),
-                # Outline (text stroke) width in em. 0 = no outline.
                 "outline": ("FLOAT", {"default": 0.02, "min": 0.0, "max": 0.5, "step": 0.01}),
-                # Outline (text stroke) color. Empty = use CSS/template default (#000).
                 "outline_color": ("STRING", {"default": "", "multiline": False}),
-                # Outline corner style: boolean. False = flat (centered
-                # -webkit-text-stroke, default). True = sharp (hard pointed /
-                # lancip outline: single feMorphology SVG filter in preview,
-                # 8-copy text-shadow in headless export).
                 "outline_style": ("BOOLEAN", {"default": False, "label_on": "sharp", "label_off": "flat"}),
-                # template LAST so older workflows (srt,css,w,h) keep mapping
+                # ── LAYOUT (segmentation / karaoke) ──
+                "split_words_into_letters": ("BOOLEAN", {"default": False}),
+                "max_words": ("INT", {"default": 12, "min": 1, "max": 50, "step": 1}),
+                "max_lines": ("INT", {"default": 2, "min": 1, "max": 5, "step": 1}),
+                "gap_free": ("BOOLEAN", {"default": False}),
+                # ── CODE (raw CSS override + template) ──
+                "css": ("STRING", {"multiline": True, "default": DEFAULT_CSS}),
+                # template LAST so positional inputs (srt,w,h) keep mapping
                 "template": (template_names, {"default": "(none / custom)"}),
             },
-            # Preview-only reference background image. Used by the in-node
-            # preview to composite the caption over an image for placement
-            # reference. NEVER baked into the exported frames (those stay
-            # transparent, see RETURN_TYPES IMAGE + MASK).
+            # Preview-only reference background image (never baked into frames).
             "optional": {
                 "preview_image": ("IMAGE",),
             },
@@ -173,11 +178,13 @@ class TikTokCaptionNode:
     FUNCTION = "execute"
     CATEGORY = "image/text"
 
-    def execute(self, srt, css, width, height, font_size, vertical_align,
-                vertical_offset, horizontal_align, horizontal_offset,
-                rotation, text_color, highlight_color, split_words_into_letters,
-                text_case, max_words, max_lines, gap_free, font_family,
-                outline, outline_color, outline_style, template, preview_image=None):
+    def execute(self, srt, width, height, font_family, font_size, font_weight,
+                letter_spacing, word_spacing, line_spacing, text_align, text_case,
+                italic, underline, strikethrough, vertical_align, vertical_offset,
+                horizontal_align, horizontal_offset, rotation, text_color,
+                highlight_color, outline, outline_color, outline_style,
+                split_words_into_letters, max_words, max_lines, gap_free, css,
+                template, preview_image=None):
         import torch, numpy as np
         from PIL import Image
         # Self-heal stale/positional-mismatched numeric inputs.
@@ -191,23 +198,67 @@ class TikTokCaptionNode:
             height = 960
         width = max(1, width)
         height = max(1, height)
-        # Fixed internal sample rate (SAMPLE_FPS=30) is applied inside the
-        # engine; no fps parameter is exposed (avoids preview/output desync
-        # and the flicker that came from mismatched frame counts).
-        # Build inline styles; numeric/color overrides only apply when the
-        # user sets them, so template/CSS defaults are preserved otherwise.
+        # Build the inline-style map from the tscaps-native typography /
+        # position / effect widgets. Only values the user explicitly changed
+        # (non-zero / non-"(auto)") are emitted, so a selected template's own
+        # defaults win otherwise — exactly like tscaps.
         inline_styles = {}
         if template and template != "(none / custom)":
             loaded = template_loader.load_template(template, font_scale=3.5)
             if loaded:
                 css = loaded["css"]
                 inline_styles = dict(loaded["inlineStyles"])
+        from py.headless_render import _norm_font
+        ff = str(font_family or "").strip()
+        if ff and ff != "(template default)":
+            norm = _norm_font(ff)
+            inline_styles["--tscaps-font-family"] = f"'{norm}'"
+            embed_font = norm
+        else:
+            embed_font = _norm_font(inline_styles.get("--tscaps-font-family", "") or "")
         try:
             fs = float(font_size)
         except Exception:
             fs = 0.0
         if fs and fs > 0:
             inline_styles["--tscaps-font-size"] = f"{fs}cqh"
+        try:
+            fw = int(font_weight)
+        except Exception:
+            fw = 0
+        if fw and fw > 0:
+            inline_styles["--tscaps-font-weight"] = str(fw)
+        try:
+            ls = float(letter_spacing)
+        except Exception:
+            ls = 0.0
+        if ls and ls != 0.0:
+            inline_styles["--tscaps-letter-spacing"] = f"{ls}em"
+        try:
+            ws = float(word_spacing)
+        except Exception:
+            ws = 0.0
+        if ws and ws != 0.0:
+            inline_styles["--tscaps-word-spacing"] = f"{ws}em"
+        try:
+            lns = float(line_spacing)
+        except Exception:
+            lns = 0.0
+        if lns and lns != 0.0:
+            inline_styles["--tscaps-line-spacing"] = f"{lns}em"
+        if text_align and text_align != "(auto)":
+            inline_styles["--tscaps-text-align"] = text_align
+        if text_case and text_case != "(auto)":
+            inline_styles["--tscaps-text-transform"] = text_case
+        if italic and italic != "(auto)":
+            inline_styles["--tscaps-font-style"] = "italic" if italic == "on" else "normal"
+        decorations = []
+        if underline == "on":
+            decorations.append("underline")
+        if strikethrough == "on":
+            decorations.append("line-through")
+        if decorations:
+            inline_styles["--tscaps-text-decoration"] = " ".join(decorations)
         try:
             rot = float(rotation)
         except Exception:
@@ -220,28 +271,6 @@ class TikTokCaptionNode:
         hc = str(highlight_color or "").strip()
         if hc:
             inline_styles["--tscaps-highlight-color"] = hc
-        # Outline (text stroke): width in em, color. Both drive the
-        # --tscaps-outline-* custom properties the CSS references.
-        try:
-            ow = float(outline)
-        except Exception:
-            ow = 0.02
-        inline_styles["--tscaps-outline-width"] = f"{ow}em"
-        oc = str(outline_color or "").strip()
-        if oc:
-            inline_styles["--tscaps-outline-color"] = oc
-        # Font family: use the override if set, otherwise the template's
-        # default font. Either way the font is embedded (in headless) /
-        # inlined (in preview) as @font-face so it renders in the SVG context.
-        ff = str(font_family or "").strip()
-        from py.headless_render import _norm_font
-        if ff and ff != "(template default)":
-            norm = _norm_font(ff)
-            inline_styles["--tscaps-font-family"] = f"'{norm}'"
-            embed_font = norm
-        else:
-            # template_loader already put the template default into inlineStyles
-            embed_font = _norm_font(inline_styles.get("--tscaps-font-family", "") or "")
         alignment = {
             "verticalAlign": vertical_align,
             "verticalOffset": float(vertical_offset),
@@ -249,8 +278,9 @@ class TikTokCaptionNode:
             "horizontalOffset": float(horizontal_offset),
         }
         return self._render(css, inline_styles, alignment, srt, width, height,
-                           split_words_into_letters, text_case, max_words, max_lines,
-                           gap_free, embed_font, outline, outline_color, outline_style)
+                           split_words_into_letters, text_case if text_case != "(auto)" else "none",
+                           max_words, max_lines, gap_free, embed_font, outline,
+                           outline_color, outline_style)
 
     def _render(self, css, inline_styles, alignment, srt, width, height,
                 split_words_into_letters=False, text_case="none",

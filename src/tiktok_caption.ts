@@ -258,38 +258,54 @@ function setupWidget(node: any): void {
         st.textContent = 'tpl err: ' + (e?.message || e);
       }
     }
-    // font_size (cqh). 0 = use template/CSS default; >0 overrides it.
-    const font_size = parseFloat(getWidgetVal(node, 'font_size') || '0') || 0;
-    if (font_size > 0) inline['--tscaps-font-size'] = `${font_size}cqh`;
-    // rotation (deg). 0 = use template/CSS default; !=0 overrides it.
-    const rotation = parseFloat(getWidgetVal(node, 'rotation') || '0') || 0;
-    if (rotation !== 0) inline['--tscaps-rotation'] = `${rotation}deg`;
-    // color overrides (hex). empty = use template/CSS default.
-    const text_color = String(getWidgetVal(node, 'text_color') || '').trim();
-    if (text_color) inline['--tscaps-primary-color'] = text_color;
-    const highlight_color = String(getWidgetVal(node, 'highlight_color') || '').trim();
-    if (highlight_color) inline['--tscaps-highlight-color'] = highlight_color;
-    // alignment (caption anchor inside the frame).
+    // ── POSITION (tscaps AlignmentConfig) ──
     const alignment = {
       verticalAlign: getWidgetVal(node, 'vertical_align') || 'bottom',
       verticalOffset: parseFloat(getWidgetVal(node, 'vertical_offset') || '0.85') || 0.85,
       horizontalAlign: getWidgetVal(node, 'horizontal_align') || 'center',
       horizontalOffset: parseFloat(getWidgetVal(node, 'horizontal_offset') || '0.5') || 0.5,
     };
-    // letter-level splitting for per-character CSS animations.
+    // ── TYPOGRAPHY (tscaps TypographyConfig) — only emit if the user changed
+    //    a value away from its neutral "use template default" sentinel. ──
+    const font_size = parseFloat(getWidgetVal(node, 'font_size') || '0') || 0;
+    if (font_size > 0) inline['--tscaps-font-size'] = `${font_size}cqh`;
+    const fontWeight = parseInt(getWidgetVal(node, 'font_weight') || '0') || 0;
+    if (fontWeight > 0) inline['--tscaps-font-weight'] = String(fontWeight);
+    const letterSpacing = parseFloat(getWidgetVal(node, 'letter_spacing') || '0') || 0;
+    if (letterSpacing !== 0) inline['--tscaps-letter-spacing'] = `${letterSpacing}em`;
+    const wordSpacing = parseFloat(getWidgetVal(node, 'word_spacing') || '0') || 0;
+    if (wordSpacing !== 0) inline['--tscaps-word-spacing'] = `${wordSpacing}em`;
+    const lineSpacing = parseFloat(getWidgetVal(node, 'line_spacing') || '0') || 0;
+    if (lineSpacing !== 0) inline['--tscaps-line-spacing'] = `${lineSpacing}em`;
+    const textAlign = getWidgetVal(node, 'text_align') || '(auto)';
+    if (textAlign && textAlign !== '(auto)') inline['--tscaps-text-align'] = textAlign;
+    const textCase = getWidgetVal(node, 'text_case') || '(auto)';
+    if (textCase && textCase !== '(auto)') inline['--tscaps-text-transform'] = textCase;
+    const italic = getWidgetVal(node, 'italic') || '(auto)';
+    if (italic !== '(auto)') inline['--tscaps-font-style'] = italic === 'on' ? 'italic' : 'normal';
+    const decorations: string[] = [];
+    if (getWidgetVal(node, 'underline') === 'on') decorations.push('underline');
+    if (getWidgetVal(node, 'strikethrough') === 'on') decorations.push('line-through');
+    if (decorations.length) inline['--tscaps-text-decoration'] = decorations.join(' ');
+    // ── EFFECT ──
+    const rotation = parseFloat(getWidgetVal(node, 'rotation') || '0') || 0;
+    if (rotation !== 0) inline['--tscaps-rotation'] = `${rotation}deg`;
+    const text_color = String(getWidgetVal(node, 'text_color') || '').trim();
+    if (text_color) inline['--tscaps-primary-color'] = text_color;
+    const highlight_color = String(getWidgetVal(node, 'highlight_color') || '').trim();
+    if (highlight_color) inline['--tscaps-highlight-color'] = highlight_color;
+    // ── LAYOUT ──
     const splitLetters = !!getWidgetVal(node, 'split_words_into_letters');
-    // text case transform.
-    const textCase = getWidgetVal(node, 'text_case') || 'none';
-    // segment density controls.
     const maxWords = parseInt(getWidgetVal(node, 'max_words') || '12') || 12;
     const maxLines = parseInt(getWidgetVal(node, 'max_lines') || '2') || 2;
-    // gap-free: eliminate flicker between segments.
     const gapFree = !!getWidgetVal(node, 'gap_free');
     // outline (text stroke): width in em + color.
     const outline = parseFloat(getWidgetVal(node, 'outline') || '0.02') || 0;
     const outlineColor = String(getWidgetVal(node, 'outline_color') || '').trim();
-    // Outline corner style: flat | rounded | sharp.
-    const outlineStyle = getWidgetVal(node, 'outline_style') || 'flat';
+    // Outline corner style: boolean (false=flat, true=sharp). Accepts the old
+    // string 'sharp' too, for backwards-compat with a previous schema.
+    const outlineStyleRaw = getWidgetVal(node, 'outline_style');
+    const outlineStyle = outlineStyleRaw === true || outlineStyleRaw === 'sharp';
     // font family: override or template default, embedded as @font-face with
     // data: URIs so it is available inside the SVG foreignObject context.
     const fontFamily = getWidgetVal(node, 'font_family') || '(template default)';
