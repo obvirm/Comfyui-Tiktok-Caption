@@ -81,12 +81,17 @@ export function mountTemplateSidebar(
   }
 
   const engine = { wordSplitter: new GraphemeWordSplitter() };
-  const assetRepo = { list: () => [], resolve: () => null };
+  const assetRepo = {
+    list: () => [],
+    resolve: (id: string) => (id ? { url: `/extensions/Comfyui-Caption-Live/templates/_assets/${id}.png` } : null),
+  };
   const artifactsBuilder = new TemplatePreviewArtifactsBuilder(
     new TypographyCssVarBuilder(),
     new RotationCssVarBuilder(),
     new StyleValuesCssVarsBuilder(assetRepo as any),
   );
+  // (The vendored CssAssetReferenceResolver inside TemplatePreviewArtifactsBuilder
+  // now resolves `asset:<id>` to our served _assets path instead of null.)
   const library = { favorites: new Set<string>(), toggleFavorite: () => {} };
 
   const Gallery = () => {

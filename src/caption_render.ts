@@ -9,6 +9,23 @@ import { SrtTranscriber } from '@modules/transcription/SrtTranscriber';
 try { if (typeof crypto !== 'undefined' && !crypto.randomUUID) {
   (crypto as any).randomUUID = () => 'id-' + Math.random().toString(16).slice(2);
 } } catch {}
+
+/**
+ * Template CSS references shared binary assets as `url('asset:<id>')`.
+ * tscaps's real loader rewrites those to resolved URLs; our vendored UI
+ * gallery passes a stub repo that returns null, so the raw `asset:` token
+ * would leak into the DOM and the browser would try to fetch the `asset:`
+ * scheme (→ "Cross-Origin Request Blocked: ... asset:marker-stroke").
+ * We rewrite the tokens ourselves to the actual served file path.
+ */
+const ASSET_BASE = '/extensions/Comfyui-Caption-Live/templates/_assets';
+function resolveAssetRefs(css: string): string {
+  if (!css || css.indexOf('asset:') === -1) return css;
+  // Our shared asset pool only holds PNGs today (marker-stroke.png, ...),
+  // referenced as `asset:<name>` (no extension). Append `.png`.
+  return css.replace(/asset:([a-zA-Z0-9_-]+)/g, (_m, id) => `${ASSET_BASE}/${id}.png`);
+}
+
 import {
   createRenderer,
   BrowserCssResourceEmbedder,
@@ -284,9 +301,12 @@ function buildStyle(params: CaptionParams): Record<string, SubtitleStyle> {
   // Prepend fontCss (pre-inlined @font-face with data: URIs) so the
   // engine renders the font inside the SVG foreignObject isolated doc.
   const fullCss = params.fontCss ? params.fontCss + '\n' + params.css : params.css;
+  // Rewrite template `asset:<id>` references to the served file URL so the
+  // engine's raster path doesn't try to fetch the bogus `asset:` scheme.
+  const resolvedCss = resolveAssetRefs(fullCss);
   const inline = buildInlineVars(params);
   const style: SubtitleStyle = {
-    css: fullCss,
+    css: resolvedCss,
     inlineStyles: inline,
     alignment: (params.alignment as any) ?? DEFAULT_ALIGNMENT,
     rendering: {
@@ -516,6 +536,9 @@ export async function mountLiveCaption(
 
   const inline = buildInlineVars(opts);
   const fullCss = (opts.fontCss ? opts.fontCss + '\n' : '') + (opts.css || '');
+  // Rewrite `asset:<id>` references to the served file URL so the live-DOM
+  // preview doesn't leak the bogus `asset:` scheme into the DOM.
+  const fullCssResolved = resolveAssetRefs(fullCss);
 
   // ── Sharp outline via SVG feMorphology (preview-only) ───────────────────
   // -webkit-text-stroke cannot produce a pointed ("sharp") corner — its join
@@ -570,10 +593,10 @@ export async function mountLiveCaption(
   // (renames @keyframes per scope, prefixes selectors) and append the
   // !important paused rule for ::before/::after pseudos so template pseudo
   // animations stay frozen on the resting/scrubbed frame.
-  let cssToInject = fullCss;
+  let cssToInject = fullCssResolved;
   if (opts.scopeClass) {
     const scoper = new CssScoper();
-    const scoped = scoper.scope(fullCss, '.' + opts.scopeClass);
+    const scoped = scoper.scope(fullCssResolved, '.' + opts.scopeClass);
     const pseudoPause = `.${opts.scopeClass} *::before, .${opts.scopeClass} *::after { animation-play-state: paused !important; animation-fill-mode: both; }`;
     cssToInject = scoped + '\n' + pseudoPause;
   }
