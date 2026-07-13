@@ -108,7 +108,16 @@ export function mountTemplateSidebar(
               fetch(`${TEMPLATES_BASE}/${encodeURIComponent(name)}/style.css`).then((r) => r.text()),
               fetch(`${TEMPLATES_BASE}/${encodeURIComponent(name)}/template.json`).then((r) => r.text()),
             ]);
-            loaded.push(buildTemplate(name, JSON.parse(jsonTxt), cssTxt));
+            // Rewrite `asset:<id>` template refs to the served _assets URL
+            // BEFORE handing the CSS to the vendored gallery — its
+            // buildScopedCss does NOT run CssAssetReferenceResolver, so a raw
+            // token would leak into the DOM (browser → CORS error on the
+            // `asset:` scheme). .png is appended (our pool holds PNGs).
+            const resolvedCss = (cssTxt || '').replace(
+              /asset:([a-zA-Z0-9_-]+)/g,
+              (_m, id) => `${TEMPLATES_BASE}/_assets/${id}.png`,
+            );
+            loaded.push(buildTemplate(name, JSON.parse(jsonTxt), resolvedCss));
           } catch (e) {
             console.warn('[tscaps gallery] failed to load', name, e);
           }
