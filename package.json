@@ -4,11 +4,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npx esbuild src/tiktok_caption.ts --bundle --minify --alias:@modules=./vendor/tscaps-engine/modules --outfile=web/js/tiktok_caption.js",
-    "dev": "npx esbuild src/tiktok_caption.ts --bundle --watch --alias:@modules=./vendor/tscaps-engine/modules --outfile=web/js/tiktok_caption.js"
+    "build": "node scripts/build.mjs",
+    "build:css": "node scripts/build-css.mjs",
+    "build:manifest": "node scripts/gen-manifest.mjs",
+    "build:all": "npm run build:manifest && npm run build:css && npm run build",
+    "dev": "node scripts/build.mjs --watch"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
+    "postcss": "^8.5.18",
+    "postcss-prefix-selector": "^2.1.1",
+    "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "lucide-react": "^1.24.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^3.4.19"
   }
 }

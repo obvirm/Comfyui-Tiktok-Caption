@@ -9,7 +9,11 @@ import { VIDEO_FRAME_LAYER_BASELINE_CSS } from '@modules/rendering/styles/VideoF
 const UNIVERSAL_BASELINE_CSS = `html { font-size: 16px; text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; animation-fill-mode: both; animation-play-state: paused !important; }
 .line { white-space: nowrap; }
-.segment { position: relative; }`;
+/* Safe minimum line spacing. Templates may override this, but if they omit
+   line-height the value falls back to the font's "normal" — which is tight
+   (sometimes < 1.0) for display fonts, causing adjacent caption lines to
+   touch/overlap. A 1.3 floor guarantees a visible gap between lines. */
+.segment { position: relative; line-height: 1.3; }`;
 
 /**
  * Optional baseline CSS blocks a prepared style depends on. Each flag

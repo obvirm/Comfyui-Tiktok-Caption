@@ -43,8 +43,9 @@ DEFAULT_CSS = """.segment{
   text-transform: none;
   text-decoration: none;
   color: var(--tscaps-primary-color, #ffffff);
-  -webkit-text-stroke: 0.02em #000;
+  -webkit-text-stroke: var(--tscaps-outline-width, 0.02em) var(--tscaps-outline-color, #000);
   paint-order: stroke fill;
+  text-shadow: var(--tscaps-outline-shadow, none);
   line-height: 1.3;
 }
 .line { display: block; text-align: center; white-space: normal; }
@@ -72,6 +73,36 @@ except Exception as e:
     logger.error(f"Headless renderer import failed: {e}")
     render_frames = None
     template_loader = None
+
+# ── Font CSS proxy ─────────────────────────────────────────────────────
+# Served same-origin (under /api/) so the in-node preview can load a custom
+# Google Font even when a reverse proxy in front of ComfyUI blocks the
+# browser's direct CORS fetch to fonts.googleapis.com. The server fetches the
+# @font-face CSS and inlines each font file as a data: URI (no extra browser
+# fetch, no CORS), exactly like the headless final render does.
+try:
+    from aiohttp import web
+    from server import PromptServer
+
+    @PromptServer.instance.routes.get("/api/caption/font-css")
+    async def _caption_font_css(request):
+        family = (request.query.get("family", "") or "").strip()
+        if not family:
+            return web.Response(text="", content_type="text/css")
+        try:
+            from py.headless_render import _build_google_font_css
+            css = _build_google_font_css(family)
+        except Exception as e:
+            logger.warning(f"Font CSS proxy failed for '{family}': {e}")
+            css = ""
+        return web.Response(
+            text=css,
+            content_type="text/css",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+    logger.info("Caption font-css proxy registered at /api/caption/font-css")
+except Exception as e:
+    logger.warning(f"Caption font-css proxy route not registered: {e}")
 
 
 class TikTokCaptionNode:
@@ -102,25 +133,49 @@ class TikTokCaptionNode:
                 "split_words_into_letters": ("BOOLEAN", {"default": False}),
                 # Text case transform. Applied via CSS text-transform.
                 "text_case": (["none", "lowercase", "capitalize", "uppercase"], {"default": "none"}),
-                # Max characters per caption segment. Controls caption density.
-                "max_chars": ("INT", {"default": 40, "min": 5, "max": 200, "step": 1}),
+                # Max words per caption segment. Controls caption density.
+                "max_words": ("INT", {"default": 12, "min": 1, "max": 50, "step": 1}),
                 # Max lines per segment. 1 = TikTok single-line, 2 = balanced, 3 = long.
                 "max_lines": ("INT", {"default": 2, "min": 1, "max": 5, "step": 1}),
                 # Gap-free: extend segment end time to eliminate flicker between captions.
                 "gap_free": ("BOOLEAN", {"default": False}),
+                # Font family dropdown. Overrides the template's default font.
+                "font_family": ([
+                    "(template default)", "Anton", "Bebas Neue", "Bungee",
+                    "Bricolage Grotesque Variable", "Caveat Variable",
+                    "Inter Variable", "JetBrains Mono Variable",
+                    "Lora Variable", "Montserrat", "Noto Sans",
+                    "Playfair Display Variable", "Roboto", "Rubik",
+                    "Space Grotesque Variable", "Work Sans Variable",
+                ], {"default": "(template default)"}),
+                # Outline (text stroke) width in em. 0 = no outline.
+                "outline": ("FLOAT", {"default": 0.02, "min": 0.0, "max": 0.5, "step": 0.01}),
+                # Outline (text stroke) color. Empty = use CSS/template default (#000).
+                "outline_color": ("STRING", {"default": "", "multiline": False}),
+                # Outline corner style: flat (centered stroke), rounded (soft
+                # halo), sharp (hard pointed / lancip outline via text-shadow).
+                "outline_style": (["flat", "rounded", "sharp"], {"default": "flat"}),
                 # template LAST so older workflows (srt,css,w,h) keep mapping
                 "template": (template_names, {"default": "(none / custom)"}),
             },
+            # Preview-only reference background image. Used by the in-node
+            # preview to composite the caption over an image for placement
+            # reference. NEVER baked into the exported frames (those stay
+            # transparent, see RETURN_TYPES IMAGE + MASK).
+            "optional": {
+                "preview_image": ("IMAGE",),
+            },
         }
 
-    RETURN_TYPES = ("IMAGE",)
+    RETURN_TYPES = ("IMAGE", "MASK")
     FUNCTION = "execute"
     CATEGORY = "image/text"
 
     def execute(self, srt, css, width, height, font_size, vertical_align,
                 vertical_offset, horizontal_align, horizontal_offset,
                 rotation, text_color, highlight_color, split_words_into_letters,
-                text_case, max_chars, max_lines, gap_free, template):
+                text_case, max_words, max_lines, gap_free, font_family,
+                outline, outline_color, outline_style, template, preview_image=None):
         import torch, numpy as np
         from PIL import Image
         # Self-heal stale/positional-mismatched numeric inputs.
@@ -157,12 +212,34 @@ class TikTokCaptionNode:
             rot = 0.0
         if rot != 0:
             inline_styles["--tscaps-rotation"] = f"{rot}deg"
-        tc = (text_color or "").strip()
+        tc = str(text_color or "").strip()
         if tc:
             inline_styles["--tscaps-primary-color"] = tc
-        hc = (highlight_color or "").strip()
+        hc = str(highlight_color or "").strip()
         if hc:
             inline_styles["--tscaps-highlight-color"] = hc
+        # Outline (text stroke): width in em, color. Both drive the
+        # --tscaps-outline-* custom properties the CSS references.
+        try:
+            ow = float(outline)
+        except Exception:
+            ow = 0.02
+        inline_styles["--tscaps-outline-width"] = f"{ow}em"
+        oc = str(outline_color or "").strip()
+        if oc:
+            inline_styles["--tscaps-outline-color"] = oc
+        # Font family: use the override if set, otherwise the template's
+        # default font. Either way the font is embedded (in headless) /
+        # inlined (in preview) as @font-face so it renders in the SVG context.
+        ff = str(font_family or "").strip()
+        from py.headless_render import _norm_font
+        if ff and ff != "(template default)":
+            norm = _norm_font(ff)
+            inline_styles["--tscaps-font-family"] = f"'{norm}'"
+            embed_font = norm
+        else:
+            # template_loader already put the template default into inlineStyles
+            embed_font = _norm_font(inline_styles.get("--tscaps-font-family", "") or "")
         alignment = {
             "verticalAlign": vertical_align,
             "verticalOffset": float(vertical_offset),
@@ -170,31 +247,44 @@ class TikTokCaptionNode:
             "horizontalOffset": float(horizontal_offset),
         }
         return self._render(css, inline_styles, alignment, srt, width, height,
-                           split_words_into_letters, text_case, max_chars, max_lines, gap_free)
+                           split_words_into_letters, text_case, max_words, max_lines,
+                           gap_free, embed_font, outline, outline_color, outline_style)
 
     def _render(self, css, inline_styles, alignment, srt, width, height,
                 split_words_into_letters=False, text_case="none",
-                max_chars=40, max_lines=2, gap_free=False):
+                max_words=12, max_lines=2, gap_free=False, font_family="",
+                outline=0.02, outline_color="", outline_style="flat"):
         import torch, numpy as np
         from PIL import Image
         if render_frames is None:
             logger.error("render_frames unavailable")
-            return (torch.zeros((1, height, width, 3), dtype=torch.float32),)
+            return (torch.zeros((1, height, width, 3), dtype=torch.float32),
+                    torch.zeros((1, height, width), dtype=torch.float32))
         try:
             pngs = render_frames(srt, css, width, height, inline_styles=inline_styles,
                                 alignment=alignment, split_words_into_letters=split_words_into_letters,
-                                text_case=text_case, max_chars=max_chars, max_lines=max_lines,
-                                gap_free=gap_free)
+                                 text_case=text_case, max_words=max_words, max_lines=max_lines,
+                                 gap_free=gap_free, outline=outline, outline_color=outline_color,
+                                 font_family=font_family, outline_style=outline_style)
             if not pngs:
                 logger.warning("No frames rendered")
-                return (torch.zeros((1, height, width, 3), dtype=torch.float32),)
+                return (torch.zeros((1, height, width, 3), dtype=torch.float32),
+                        torch.zeros((1, height, width), dtype=torch.float32))
             n = len(pngs)
-            buf = np.zeros((n, height, width, 3), dtype=np.float32)
+            img_buf = np.zeros((n, height, width, 3), dtype=np.float32)
+            mask_buf = np.zeros((n, height, width), dtype=np.float32)
             for i, png in enumerate(pngs):
-                img = Image.open(io.BytesIO(png)).convert("RGB")
-                arr = np.asarray(img, dtype=np.float32)
-                buf[i] = arr / 255.0
-            return (torch.from_numpy(buf),)
+                # Keep the alpha channel so the exported caption is transparent
+                # (the preview shows an optional background image, but the
+                # exported frames never include it). The IMAGE output carries
+                # the caption RGB (transparent areas are black) and MASK carries
+                # the alpha — composite the two for a clean transparent overlay.
+                rgba = Image.open(io.BytesIO(png)).convert("RGBA")
+                rgb = np.asarray(rgba.convert("RGB"), dtype=np.float32) / 255.0
+                alpha = np.asarray(rgba.split()[-1], dtype=np.float32) / 255.0
+                img_buf[i] = rgb
+                mask_buf[i] = alpha
+            return (torch.from_numpy(img_buf), torch.from_numpy(mask_buf))
         except Exception as e:
             # ComfyUI's stderr is broken (OSError Errno 22); do NOT print
             # tracebacks to it or the process dies. Log quietly instead.
@@ -202,8 +292,8 @@ class TikTokCaptionNode:
                 logger.error(f"Caption render failed: {e}")
             except Exception:
                 pass
-            return (torch.zeros((1, height, width, 3), dtype=torch.float32),)
-
+            return (torch.zeros((1, height, width, 3), dtype=torch.float32),
+                    torch.zeros((1, height, width), dtype=torch.float32))
 
 NODE_CLASS_MAPPINGS = {"TikTokCaptionNode": TikTokCaptionNode}
 NODE_DISPLAY_NAME_MAPPINGS = {"TikTokCaptionNode": "TikTok Caption (tscaps)"}

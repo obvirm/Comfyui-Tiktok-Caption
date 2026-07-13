@@ -1,0 +1,3018 @@
+/* ── Design tokens ─────────────────────────────────────────────────
+   Single source of truth for the visual language. The spec lives in
+   docs/DESIGN_IDENTITY.md — values here mirror that document.
+
+   Color tokens are stored as **space-separated RGB channels** (e.g.
+   `8 8 11` instead of `#08080B` or `rgb(8, 8, 11)`). The Tailwind
+   config wraps each channel in `rgb(... / <alpha-value>)` so utilities
+   like `bg-surface-1/40` and `border-danger/20` work end-to-end with
+   CSS variables. Direct `var(--color-X)` references in legacy CSS must
+   wrap themselves in `rgb()` — see `globals.css`.
+
+   Light/dark themes share token names; `[data-theme="light"]`
+   redefines the channels and any utility / CSS reference re-resolves
+   automatically. The initial theme decision lives inline in
+   `index.html` so the page renders with the correct colors before any
+   CSS loads.
+
+   Naming convention:
+     surface-0..3   background depth (0 = deepest, 3 = highest elevation)
+     fg-{role}      foreground / text color (primary/secondary/muted/faint)
+     edge-{tone}    borders & dividers (subtle/medium/strong)
+     accent         interactive primary (links, focus, active states)
+     danger / warning / info  semantic
+   ───────────────────────────────────────────────────────────────── */
+
+.tscaps-ui-root *, .tscaps-ui-root ::before, .tscaps-ui-root ::after {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x:  ;
+  --tw-pan-y:  ;
+  --tw-pinch-zoom:  ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position:  ;
+  --tw-gradient-via-position:  ;
+  --tw-gradient-to-position:  ;
+  --tw-ordinal:  ;
+  --tw-slashed-zero:  ;
+  --tw-numeric-figure:  ;
+  --tw-numeric-spacing:  ;
+  --tw-numeric-fraction:  ;
+  --tw-ring-inset:  ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur:  ;
+  --tw-brightness:  ;
+  --tw-contrast:  ;
+  --tw-grayscale:  ;
+  --tw-hue-rotate:  ;
+  --tw-invert:  ;
+  --tw-saturate:  ;
+  --tw-sepia:  ;
+  --tw-drop-shadow:  ;
+  --tw-backdrop-blur:  ;
+  --tw-backdrop-brightness:  ;
+  --tw-backdrop-contrast:  ;
+  --tw-backdrop-grayscale:  ;
+  --tw-backdrop-hue-rotate:  ;
+  --tw-backdrop-invert:  ;
+  --tw-backdrop-opacity:  ;
+  --tw-backdrop-saturate:  ;
+  --tw-backdrop-sepia:  ;
+  --tw-contain-size:  ;
+  --tw-contain-layout:  ;
+  --tw-contain-paint:  ;
+  --tw-contain-style:  ;
+}
+
+.tscaps-ui-root ::backdrop {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x:  ;
+  --tw-pan-y:  ;
+  --tw-pinch-zoom:  ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position:  ;
+  --tw-gradient-via-position:  ;
+  --tw-gradient-to-position:  ;
+  --tw-ordinal:  ;
+  --tw-slashed-zero:  ;
+  --tw-numeric-figure:  ;
+  --tw-numeric-spacing:  ;
+  --tw-numeric-fraction:  ;
+  --tw-ring-inset:  ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur:  ;
+  --tw-brightness:  ;
+  --tw-contrast:  ;
+  --tw-grayscale:  ;
+  --tw-hue-rotate:  ;
+  --tw-invert:  ;
+  --tw-saturate:  ;
+  --tw-sepia:  ;
+  --tw-drop-shadow:  ;
+  --tw-backdrop-blur:  ;
+  --tw-backdrop-brightness:  ;
+  --tw-backdrop-contrast:  ;
+  --tw-backdrop-grayscale:  ;
+  --tw-backdrop-hue-rotate:  ;
+  --tw-backdrop-invert:  ;
+  --tw-backdrop-opacity:  ;
+  --tw-backdrop-saturate:  ;
+  --tw-backdrop-sepia:  ;
+  --tw-contain-size:  ;
+  --tw-contain-layout:  ;
+  --tw-contain-paint:  ;
+  --tw-contain-style:  ;
+}
+
+/* ! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com */
+
+/*
+1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)
+2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)
+*/
+
+.tscaps-ui-root *,
+.tscaps-ui-root ::before,
+.tscaps-ui-root ::after {
+  box-sizing: border-box; /* 1 */
+  border-width: 0; /* 2 */
+  border-style: solid; /* 2 */
+  border-color: #e5e7eb; /* 2 */
+}
+
+.tscaps-ui-root ::before,
+.tscaps-ui-root ::after {
+  --tw-content: '';
+}
+
+/*
+1. Use a consistent sensible line-height in all browsers.
+2. Prevent adjustments of font size after orientation changes in iOS.
+3. Use a more readable tab size.
+4. Use the user's configured `sans` font-family by default.
+5. Use the user's configured `sans` font-feature-settings by default.
+6. Use the user's configured `sans` font-variation-settings by default.
+7. Disable tap highlights on iOS
+*/
+
+.tscaps-ui-root html,
+.tscaps-ui-root :host {
+  line-height: 1.5; /* 1 */
+  -webkit-text-size-adjust: 100%; /* 2 */
+  -moz-tab-size: 4; /* 3 */
+  tab-size: 4; /* 3 */
+  font-family: Inter Variable, system-ui, sans-serif; /* 4 */
+  font-feature-settings: normal; /* 5 */
+  font-variation-settings: normal; /* 6 */
+  -webkit-tap-highlight-color: transparent; /* 7 */
+}
+
+/*
+1. Remove the margin in all browsers.
+2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.
+*/
+
+.tscaps-ui-root body {
+  margin: 0; /* 1 */
+  line-height: inherit; /* 2 */
+}
+
+/*
+1. Add the correct height in Firefox.
+2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)
+3. Ensure horizontal rules are visible by default.
+*/
+
+.tscaps-ui-root hr {
+  height: 0; /* 1 */
+  color: inherit; /* 2 */
+  border-top-width: 1px; /* 3 */
+}
+
+/*
+Add the correct text decoration in Chrome, Edge, and Safari.
+*/
+
+.tscaps-ui-root abbr:where([title]) {
+  text-decoration: underline dotted;
+}
+
+/*
+Remove the default font size and weight for headings.
+*/
+
+.tscaps-ui-root h1,
+.tscaps-ui-root h2,
+.tscaps-ui-root h3,
+.tscaps-ui-root h4,
+.tscaps-ui-root h5,
+.tscaps-ui-root h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/*
+Reset links to optimize for opt-in styling instead of opt-out.
+*/
+
+.tscaps-ui-root a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+/*
+Add the correct font weight in Edge and Safari.
+*/
+
+.tscaps-ui-root b,
+.tscaps-ui-root strong {
+  font-weight: bolder;
+}
+
+/*
+1. Use the user's configured `mono` font-family by default.
+2. Use the user's configured `mono` font-feature-settings by default.
+3. Use the user's configured `mono` font-variation-settings by default.
+4. Correct the odd `em` font sizing in all browsers.
+*/
+
+.tscaps-ui-root code,
+.tscaps-ui-root kbd,
+.tscaps-ui-root samp,
+.tscaps-ui-root pre {
+  font-family: JetBrains Mono Variable, ui-monospace, SFMono-Regular, Menlo, monospace; /* 1 */
+  font-feature-settings: normal; /* 2 */
+  font-variation-settings: normal; /* 3 */
+  font-size: 1em; /* 4 */
+}
+
+/*
+Add the correct font size in all browsers.
+*/
+
+.tscaps-ui-root small {
+  font-size: 80%;
+}
+
+/*
+Prevent `sub` and `sup` elements from affecting the line height in all browsers.
+*/
+
+.tscaps-ui-root sub,
+.tscaps-ui-root sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+.tscaps-ui-root sub {
+  bottom: -0.25em;
+}
+
+.tscaps-ui-root sup {
+  top: -0.5em;
+}
+
+/*
+1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)
+2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)
+3. Remove gaps between table borders by default.
+*/
+
+.tscaps-ui-root table {
+  text-indent: 0; /* 1 */
+  border-color: inherit; /* 2 */
+  border-collapse: collapse; /* 3 */
+}
+
+/*
+1. Change the font styles in all browsers.
+2. Remove the margin in Firefox and Safari.
+3. Remove default padding in all browsers.
+*/
+
+.tscaps-ui-root button,
+.tscaps-ui-root input,
+.tscaps-ui-root optgroup,
+.tscaps-ui-root select,
+.tscaps-ui-root textarea {
+  font-family: inherit; /* 1 */
+  font-feature-settings: inherit; /* 1 */
+  font-variation-settings: inherit; /* 1 */
+  font-size: 100%; /* 1 */
+  font-weight: inherit; /* 1 */
+  line-height: inherit; /* 1 */
+  letter-spacing: inherit; /* 1 */
+  color: inherit; /* 1 */
+  margin: 0; /* 2 */
+  padding: 0; /* 3 */
+}
+
+/*
+Remove the inheritance of text transform in Edge and Firefox.
+*/
+
+.tscaps-ui-root button,
+.tscaps-ui-root select {
+  text-transform: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Remove default button styles.
+*/
+
+.tscaps-ui-root button,
+.tscaps-ui-root input:where([type='button']),
+.tscaps-ui-root input:where([type='reset']),
+.tscaps-ui-root input:where([type='submit']) {
+  -webkit-appearance: button; /* 1 */
+  background-color: transparent; /* 2 */
+  background-image: none; /* 2 */
+}
+
+/*
+Use the modern Firefox focus style for all focusable elements.
+*/
+
+.tscaps-ui-root :-moz-focusring {
+  outline: auto;
+}
+
+/*
+Remove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)
+*/
+
+.tscaps-ui-root :-moz-ui-invalid {
+  box-shadow: none;
+}
+
+/*
+Add the correct vertical alignment in Chrome and Firefox.
+*/
+
+.tscaps-ui-root progress {
+  vertical-align: baseline;
+}
+
+/*
+Correct the cursor style of increment and decrement buttons in Safari.
+*/
+
+.tscaps-ui-root ::-webkit-inner-spin-button,
+.tscaps-ui-root ::-webkit-outer-spin-button {
+  height: auto;
+}
+
+/*
+1. Correct the odd appearance in Chrome and Safari.
+2. Correct the outline style in Safari.
+*/
+
+.tscaps-ui-root [type='search'] {
+  -webkit-appearance: textfield; /* 1 */
+  outline-offset: -2px; /* 2 */
+}
+
+/*
+Remove the inner padding in Chrome and Safari on macOS.
+*/
+
+.tscaps-ui-root ::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Change font properties to `inherit` in Safari.
+*/
+
+.tscaps-ui-root ::-webkit-file-upload-button {
+  -webkit-appearance: button; /* 1 */
+  font: inherit; /* 2 */
+}
+
+/*
+Add the correct display in Chrome and Safari.
+*/
+
+.tscaps-ui-root summary {
+  display: list-item;
+}
+
+/*
+Removes the default spacing and border for appropriate elements.
+*/
+
+.tscaps-ui-root blockquote,
+.tscaps-ui-root dl,
+.tscaps-ui-root dd,
+.tscaps-ui-root h1,
+.tscaps-ui-root h2,
+.tscaps-ui-root h3,
+.tscaps-ui-root h4,
+.tscaps-ui-root h5,
+.tscaps-ui-root h6,
+.tscaps-ui-root hr,
+.tscaps-ui-root figure,
+.tscaps-ui-root p,
+.tscaps-ui-root pre {
+  margin: 0;
+}
+
+.tscaps-ui-root fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+.tscaps-ui-root legend {
+  padding: 0;
+}
+
+.tscaps-ui-root ol,
+.tscaps-ui-root ul,
+.tscaps-ui-root menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+Reset default styling for dialogs.
+*/
+
+.tscaps-ui-root dialog {
+  padding: 0;
+}
+
+/*
+Prevent resizing textareas horizontally by default.
+*/
+
+.tscaps-ui-root textarea {
+  resize: vertical;
+}
+
+/*
+1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)
+2. Set the default placeholder color to the user's configured gray 400 color.
+*/
+
+.tscaps-ui-root input::placeholder,
+.tscaps-ui-root textarea::placeholder {
+  opacity: 1; /* 1 */
+  color: #9ca3af; /* 2 */
+}
+
+/*
+Set the default cursor for buttons.
+*/
+
+.tscaps-ui-root button,
+.tscaps-ui-root [role="button"] {
+  cursor: pointer;
+}
+
+/*
+Make sure disabled buttons don't get the pointer cursor.
+*/
+
+.tscaps-ui-root :disabled {
+  cursor: default;
+}
+
+/*
+1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)
+2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)
+   This can trigger a poorly considered lint error in some tools but is included by design.
+*/
+
+.tscaps-ui-root img,
+.tscaps-ui-root svg,
+.tscaps-ui-root video,
+.tscaps-ui-root canvas,
+.tscaps-ui-root audio,
+.tscaps-ui-root iframe,
+.tscaps-ui-root embed,
+.tscaps-ui-root object {
+  display: block; /* 1 */
+  vertical-align: middle; /* 2 */
+}
+
+/*
+Constrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)
+*/
+
+.tscaps-ui-root img,
+.tscaps-ui-root video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Make elements with the HTML hidden attribute stay hidden by default */
+
+.tscaps-ui-root [hidden]:where(:not([hidden="until-found"])) {
+  display: none;
+}
+.tscaps-ui-root .\!container {
+  width: 100% !important;
+}
+.tscaps-ui-root .container {
+  width: 100%;
+}
+@media (min-width: 640px) {
+
+  .tscaps-ui-root .\!container {
+    max-width: 640px !important;
+  }
+
+  .tscaps-ui-root .container {
+    max-width: 640px;
+  }
+}
+@media (min-width: 768px) {
+
+  .tscaps-ui-root .\!container {
+    max-width: 768px !important;
+  }
+
+  .tscaps-ui-root .container {
+    max-width: 768px;
+  }
+}
+@media (min-width: 1024px) {
+
+  .tscaps-ui-root .\!container {
+    max-width: 1024px !important;
+  }
+
+  .tscaps-ui-root .container {
+    max-width: 1024px;
+  }
+}
+@media (min-width: 1280px) {
+
+  .tscaps-ui-root .\!container {
+    max-width: 1280px !important;
+  }
+
+  .tscaps-ui-root .container {
+    max-width: 1280px;
+  }
+}
+@media (min-width: 1536px) {
+
+  .tscaps-ui-root .\!container {
+    max-width: 1536px !important;
+  }
+
+  .tscaps-ui-root .container {
+    max-width: 1536px;
+  }
+}
+.tscaps-ui-root .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+.tscaps-ui-root .pointer-events-none {
+  pointer-events: none;
+}
+.tscaps-ui-root .pointer-events-auto {
+  pointer-events: auto;
+}
+.tscaps-ui-root .visible {
+  visibility: visible;
+}
+.tscaps-ui-root .invisible {
+  visibility: hidden;
+}
+.tscaps-ui-root .collapse {
+  visibility: collapse;
+}
+.tscaps-ui-root .static {
+  position: static;
+}
+.tscaps-ui-root .fixed {
+  position: fixed;
+}
+.tscaps-ui-root .absolute {
+  position: absolute;
+}
+.tscaps-ui-root .relative {
+  position: relative;
+}
+.tscaps-ui-root .sticky {
+  position: sticky;
+}
+.tscaps-ui-root .inset-0 {
+  inset: 0px;
+}
+.tscaps-ui-root .inset-x-0 {
+  left: 0px;
+  right: 0px;
+}
+.tscaps-ui-root .-top-\[2px\] {
+  top: -2px;
+}
+.tscaps-ui-root .bottom-0 {
+  bottom: 0px;
+}
+.tscaps-ui-root .bottom-3 {
+  bottom: 0.75rem;
+}
+.tscaps-ui-root .bottom-4 {
+  bottom: 1rem;
+}
+.tscaps-ui-root .left-0 {
+  left: 0px;
+}
+.tscaps-ui-root .left-1 {
+  left: 0.25rem;
+}
+.tscaps-ui-root .left-1\/2 {
+  left: 50%;
+}
+.tscaps-ui-root .left-3 {
+  left: 0.75rem;
+}
+.tscaps-ui-root .left-4 {
+  left: 1rem;
+}
+.tscaps-ui-root .right-0 {
+  right: 0px;
+}
+.tscaps-ui-root .right-1 {
+  right: 0.25rem;
+}
+.tscaps-ui-root .right-2 {
+  right: 0.5rem;
+}
+.tscaps-ui-root .right-2\.5 {
+  right: 0.625rem;
+}
+.tscaps-ui-root .right-3 {
+  right: 0.75rem;
+}
+.tscaps-ui-root .right-4 {
+  right: 1rem;
+}
+.tscaps-ui-root .right-5 {
+  right: 1.25rem;
+}
+.tscaps-ui-root .top-0 {
+  top: 0px;
+}
+.tscaps-ui-root .top-1 {
+  top: 0.25rem;
+}
+.tscaps-ui-root .top-1\.5 {
+  top: 0.375rem;
+}
+.tscaps-ui-root .top-1\/2 {
+  top: 50%;
+}
+.tscaps-ui-root .top-2 {
+  top: 0.5rem;
+}
+.tscaps-ui-root .top-2\.5 {
+  top: 0.625rem;
+}
+.tscaps-ui-root .top-3 {
+  top: 0.75rem;
+}
+.tscaps-ui-root .top-4 {
+  top: 1rem;
+}
+.tscaps-ui-root .top-\[calc\(100\%\+4px\)\] {
+  top: calc(100% + 4px);
+}
+.tscaps-ui-root .isolate {
+  isolation: isolate;
+}
+.tscaps-ui-root .z-10 {
+  z-index: 10;
+}
+.tscaps-ui-root .z-20 {
+  z-index: 20;
+}
+.tscaps-ui-root .z-30 {
+  z-index: 30;
+}
+.tscaps-ui-root .z-50 {
+  z-index: 50;
+}
+.tscaps-ui-root .z-\[10000\] {
+  z-index: 10000;
+}
+.tscaps-ui-root .z-\[1000\] {
+  z-index: 1000;
+}
+.tscaps-ui-root .z-\[1001\] {
+  z-index: 1001;
+}
+.tscaps-ui-root .z-\[100\] {
+  z-index: 100;
+}
+.tscaps-ui-root .z-\[1100\] {
+  z-index: 1100;
+}
+.tscaps-ui-root .z-\[1101\] {
+  z-index: 1101;
+}
+.tscaps-ui-root .z-\[900\] {
+  z-index: 900;
+}
+.tscaps-ui-root .-m-px {
+  margin: -1px;
+}
+.tscaps-ui-root .m-0 {
+  margin: 0px;
+}
+.tscaps-ui-root .-mx-1 {
+  margin-left: -0.25rem;
+  margin-right: -0.25rem;
+}
+.tscaps-ui-root .mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+.tscaps-ui-root .my-1 {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+.tscaps-ui-root .-mr-1 {
+  margin-right: -0.25rem;
+}
+.tscaps-ui-root .-mr-2 {
+  margin-right: -0.5rem;
+}
+.tscaps-ui-root .-mt-1 {
+  margin-top: -0.25rem;
+}
+.tscaps-ui-root .mb-1 {
+  margin-bottom: 0.25rem;
+}
+.tscaps-ui-root .mb-1\.5 {
+  margin-bottom: 0.375rem;
+}
+.tscaps-ui-root .mb-3 {
+  margin-bottom: 0.75rem;
+}
+.tscaps-ui-root .ml-auto {
+  margin-left: auto;
+}
+.tscaps-ui-root .ml-px {
+  margin-left: 1px;
+}
+.tscaps-ui-root .mt-1 {
+  margin-top: 0.25rem;
+}
+.tscaps-ui-root .mt-1\.5 {
+  margin-top: 0.375rem;
+}
+.tscaps-ui-root .mt-2 {
+  margin-top: 0.5rem;
+}
+.tscaps-ui-root .mt-2\.5 {
+  margin-top: 0.625rem;
+}
+.tscaps-ui-root .mt-3 {
+  margin-top: 0.75rem;
+}
+.tscaps-ui-root .mt-px {
+  margin-top: 1px;
+}
+.tscaps-ui-root .box-border {
+  box-sizing: border-box;
+}
+.tscaps-ui-root .block {
+  display: block;
+}
+.tscaps-ui-root .inline-block {
+  display: inline-block;
+}
+.tscaps-ui-root .inline {
+  display: inline;
+}
+.tscaps-ui-root .flex {
+  display: flex;
+}
+.tscaps-ui-root .inline-flex {
+  display: inline-flex;
+}
+.tscaps-ui-root .table {
+  display: table;
+}
+.tscaps-ui-root .grid {
+  display: grid;
+}
+.tscaps-ui-root .contents {
+  display: contents;
+}
+.tscaps-ui-root .hidden {
+  display: none;
+}
+.tscaps-ui-root .aspect-\[4\/2\] {
+  aspect-ratio: 4/2;
+}
+.tscaps-ui-root .aspect-square {
+  aspect-ratio: 1 / 1;
+}
+.tscaps-ui-root .aspect-video {
+  aspect-ratio: 16 / 9;
+}
+.tscaps-ui-root .h-1 {
+  height: 0.25rem;
+}
+.tscaps-ui-root .h-1\.5 {
+  height: 0.375rem;
+}
+.tscaps-ui-root .h-10 {
+  height: 2.5rem;
+}
+.tscaps-ui-root .h-14 {
+  height: 3.5rem;
+}
+.tscaps-ui-root .h-16 {
+  height: 4rem;
+}
+.tscaps-ui-root .h-2\.5 {
+  height: 0.625rem;
+}
+.tscaps-ui-root .h-3 {
+  height: 0.75rem;
+}
+.tscaps-ui-root .h-3\.5 {
+  height: 0.875rem;
+}
+.tscaps-ui-root .h-4 {
+  height: 1rem;
+}
+.tscaps-ui-root .h-5 {
+  height: 1.25rem;
+}
+.tscaps-ui-root .h-6 {
+  height: 1.5rem;
+}
+.tscaps-ui-root .h-7 {
+  height: 1.75rem;
+}
+.tscaps-ui-root .h-8 {
+  height: 2rem;
+}
+.tscaps-ui-root .h-\[18px\] {
+  height: 18px;
+}
+.tscaps-ui-root .h-\[1px\] {
+  height: 1px;
+}
+.tscaps-ui-root .h-\[26px\] {
+  height: 26px;
+}
+.tscaps-ui-root .h-\[30px\] {
+  height: 30px;
+}
+.tscaps-ui-root .h-\[3px\] {
+  height: 3px;
+}
+.tscaps-ui-root .h-\[44px\] {
+  height: 44px;
+}
+.tscaps-ui-root .h-\[5px\] {
+  height: 5px;
+}
+.tscaps-ui-root .h-\[7px\] {
+  height: 7px;
+}
+.tscaps-ui-root .h-\[calc\(100\%\+2px\)\] {
+  height: calc(100% + 2px);
+}
+.tscaps-ui-root .h-dvh {
+  height: 100dvh;
+}
+.tscaps-ui-root .h-full {
+  height: 100%;
+}
+.tscaps-ui-root .h-px {
+  height: 1px;
+}
+.tscaps-ui-root .max-h-\[240px\] {
+  max-height: 240px;
+}
+.tscaps-ui-root .max-h-\[90vh\] {
+  max-height: 90vh;
+}
+.tscaps-ui-root .max-h-none {
+  max-height: none;
+}
+.tscaps-ui-root .min-h-0 {
+  min-height: 0px;
+}
+.tscaps-ui-root .min-h-5 {
+  min-height: 1.25rem;
+}
+.tscaps-ui-root .min-h-\[20px\] {
+  min-height: 20px;
+}
+.tscaps-ui-root .min-h-screen {
+  min-height: 100vh;
+}
+.tscaps-ui-root .w-1\.5 {
+  width: 0.375rem;
+}
+.tscaps-ui-root .w-10 {
+  width: 2.5rem;
+}
+.tscaps-ui-root .w-14 {
+  width: 3.5rem;
+}
+.tscaps-ui-root .w-16 {
+  width: 4rem;
+}
+.tscaps-ui-root .w-2 {
+  width: 0.5rem;
+}
+.tscaps-ui-root .w-2\.5 {
+  width: 0.625rem;
+}
+.tscaps-ui-root .w-3 {
+  width: 0.75rem;
+}
+.tscaps-ui-root .w-3\.5 {
+  width: 0.875rem;
+}
+.tscaps-ui-root .w-4 {
+  width: 1rem;
+}
+.tscaps-ui-root .w-5 {
+  width: 1.25rem;
+}
+.tscaps-ui-root .w-6 {
+  width: 1.5rem;
+}
+.tscaps-ui-root .w-7 {
+  width: 1.75rem;
+}
+.tscaps-ui-root .w-8 {
+  width: 2rem;
+}
+.tscaps-ui-root .w-\[180px\] {
+  width: 180px;
+}
+.tscaps-ui-root .w-\[18px\] {
+  width: 18px;
+}
+.tscaps-ui-root .w-\[1px\] {
+  width: 1px;
+}
+.tscaps-ui-root .w-\[200px\] {
+  width: 200px;
+}
+.tscaps-ui-root .w-\[220px\] {
+  width: 220px;
+}
+.tscaps-ui-root .w-\[240px\] {
+  width: 240px;
+}
+.tscaps-ui-root .w-\[260px\] {
+  width: 260px;
+}
+.tscaps-ui-root .w-\[26px\] {
+  width: 26px;
+}
+.tscaps-ui-root .w-\[2px\] {
+  width: 2px;
+}
+.tscaps-ui-root .w-\[3px\] {
+  width: 3px;
+}
+.tscaps-ui-root .w-\[44px\] {
+  width: 44px;
+}
+.tscaps-ui-root .w-\[5px\] {
+  width: 5px;
+}
+.tscaps-ui-root .w-\[90vw\] {
+  width: 90vw;
+}
+.tscaps-ui-root .w-\[calc\(100\%\+2px\)\] {
+  width: calc(100% + 2px);
+}
+.tscaps-ui-root .w-full {
+  width: 100%;
+}
+.tscaps-ui-root .min-w-0 {
+  min-width: 0px;
+}
+.tscaps-ui-root .min-w-\[185px\] {
+  min-width: 185px;
+}
+.tscaps-ui-root .min-w-\[220px\] {
+  min-width: 220px;
+}
+.tscaps-ui-root .min-w-\[70px\] {
+  min-width: 70px;
+}
+.tscaps-ui-root .min-w-\[90px\] {
+  min-width: 90px;
+}
+.tscaps-ui-root .max-w-\[1200px\] {
+  max-width: 1200px;
+}
+.tscaps-ui-root .max-w-\[1280px\] {
+  max-width: 1280px;
+}
+.tscaps-ui-root .max-w-\[140px\] {
+  max-width: 140px;
+}
+.tscaps-ui-root .max-w-\[300px\] {
+  max-width: 300px;
+}
+.tscaps-ui-root .max-w-\[360px\] {
+  max-width: 360px;
+}
+.tscaps-ui-root .max-w-\[42ch\] {
+  max-width: 42ch;
+}
+.tscaps-ui-root .max-w-\[440px\] {
+  max-width: 440px;
+}
+.tscaps-ui-root .max-w-\[560px\] {
+  max-width: 560px;
+}
+.tscaps-ui-root .max-w-md {
+  max-width: 28rem;
+}
+.tscaps-ui-root .max-w-none {
+  max-width: none;
+}
+.tscaps-ui-root .max-w-sm {
+  max-width: 24rem;
+}
+.tscaps-ui-root .flex-1 {
+  flex: 1 1 0%;
+}
+.tscaps-ui-root .shrink {
+  flex-shrink: 1;
+}
+.tscaps-ui-root .shrink-0 {
+  flex-shrink: 0;
+}
+.tscaps-ui-root .grow {
+  flex-grow: 1;
+}
+.tscaps-ui-root .origin-left {
+  transform-origin: left;
+}
+.tscaps-ui-root .-translate-x-1\/2 {
+  --tw-translate-x: -50%;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.tscaps-ui-root .-translate-y-1 {
+  --tw-translate-y: -0.25rem;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.tscaps-ui-root .-translate-y-1\/2 {
+  --tw-translate-y: -50%;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.tscaps-ui-root .translate-x-px {
+  --tw-translate-x: 1px;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.tscaps-ui-root .translate-y-0 {
+  --tw-translate-y: 0px;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.tscaps-ui-root .translate-y-1 {
+  --tw-translate-y: 0.25rem;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.tscaps-ui-root .rotate-90 {
+  --tw-rotate: 90deg;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+.tscaps-ui-root .transform {
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+@keyframes wordmark-caption-paint {
+
+  from {
+    color: rgb(var(--color-fg-primary));
+  }
+
+  to {
+    color: rgb(var(--color-accent));
+  }
+}
+.tscaps-ui-root .animate-caption-paint {
+  animation: wordmark-caption-paint 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes wordmark-dot-blink {
+
+  0%, 100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.25;
+  }
+}
+.tscaps-ui-root .animate-dot-blink {
+  animation: wordmark-dot-blink 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+@keyframes fade-in {
+
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+.tscaps-ui-root .animate-fade-in {
+  animation: fade-in 0.12s ease;
+}
+@keyframes spin {
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+.tscaps-ui-root .animate-spin {
+  animation: spin 1s linear infinite;
+}
+.tscaps-ui-root .\!cursor-not-allowed {
+  cursor: not-allowed !important;
+}
+.tscaps-ui-root .cursor-col-resize {
+  cursor: col-resize;
+}
+.tscaps-ui-root .cursor-crosshair {
+  cursor: crosshair;
+}
+.tscaps-ui-root .cursor-default {
+  cursor: default;
+}
+.tscaps-ui-root .cursor-ew-resize {
+  cursor: ew-resize;
+}
+.tscaps-ui-root .cursor-help {
+  cursor: help;
+}
+.tscaps-ui-root .cursor-not-allowed {
+  cursor: not-allowed;
+}
+.tscaps-ui-root .cursor-pointer {
+  cursor: pointer;
+}
+.tscaps-ui-root .cursor-row-resize {
+  cursor: row-resize;
+}
+.tscaps-ui-root .cursor-text {
+  cursor: text;
+}
+.tscaps-ui-root .touch-none {
+  touch-action: none;
+}
+.tscaps-ui-root .select-none {
+  user-select: none;
+}
+.tscaps-ui-root .select-all {
+  user-select: all;
+}
+.tscaps-ui-root .resize-none {
+  resize: none;
+}
+.tscaps-ui-root .resize {
+  resize: both;
+}
+.tscaps-ui-root .list-inside {
+  list-style-position: inside;
+}
+.tscaps-ui-root .list-disc {
+  list-style-type: disc;
+}
+.tscaps-ui-root .list-none {
+  list-style-type: none;
+}
+.tscaps-ui-root .appearance-none {
+  appearance: none;
+}
+.tscaps-ui-root .grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.tscaps-ui-root .grid-cols-\[0fr\] {
+  grid-template-columns: 0fr;
+}
+.tscaps-ui-root .grid-cols-\[repeat\(3\2c 18px\)\] {
+  grid-template-columns: repeat(3,18px);
+}
+.tscaps-ui-root .grid-cols-\[repeat\(auto-fill\2c minmax\(140px\2c 1fr\)\)\] {
+  grid-template-columns: repeat(auto-fill,minmax(140px,1fr));
+}
+.tscaps-ui-root .grid-cols-\[repeat\(auto-fill\2c minmax\(260px\2c 1fr\)\)\] {
+  grid-template-columns: repeat(auto-fill,minmax(260px,1fr));
+}
+.tscaps-ui-root .grid-cols-\[repeat\(auto-fill\2c minmax\(96px\2c 1fr\)\)\] {
+  grid-template-columns: repeat(auto-fill,minmax(96px,1fr));
+}
+.tscaps-ui-root .grid-cols-\[repeat\(auto-fill\2c minmax\(min\(140px\2c 100\%\)\2c 1fr\)\)\] {
+  grid-template-columns: repeat(auto-fill,minmax(min(140px, 100%),1fr));
+}
+.tscaps-ui-root .grid-rows-\[0fr\] {
+  grid-template-rows: 0fr;
+}
+.tscaps-ui-root .grid-rows-\[1fr\] {
+  grid-template-rows: 1fr;
+}
+.tscaps-ui-root .grid-rows-\[repeat\(3\2c 18px\)\] {
+  grid-template-rows: repeat(3,18px);
+}
+.tscaps-ui-root .flex-row {
+  flex-direction: row;
+}
+.tscaps-ui-root .flex-col {
+  flex-direction: column;
+}
+.tscaps-ui-root .flex-wrap {
+  flex-wrap: wrap;
+}
+.tscaps-ui-root .flex-nowrap {
+  flex-wrap: nowrap;
+}
+.tscaps-ui-root .items-start {
+  align-items: flex-start;
+}
+.tscaps-ui-root .items-end {
+  align-items: flex-end;
+}
+.tscaps-ui-root .items-center {
+  align-items: center;
+}
+.tscaps-ui-root .items-baseline {
+  align-items: baseline;
+}
+.tscaps-ui-root .justify-end {
+  justify-content: flex-end;
+}
+.tscaps-ui-root .justify-center {
+  justify-content: center;
+}
+.tscaps-ui-root .justify-between {
+  justify-content: space-between;
+}
+.tscaps-ui-root .gap-0\.5 {
+  gap: 0.125rem;
+}
+.tscaps-ui-root .gap-1 {
+  gap: 0.25rem;
+}
+.tscaps-ui-root .gap-1\.5 {
+  gap: 0.375rem;
+}
+.tscaps-ui-root .gap-16 {
+  gap: 4rem;
+}
+.tscaps-ui-root .gap-2 {
+  gap: 0.5rem;
+}
+.tscaps-ui-root .gap-2\.5 {
+  gap: 0.625rem;
+}
+.tscaps-ui-root .gap-3 {
+  gap: 0.75rem;
+}
+.tscaps-ui-root .gap-4 {
+  gap: 1rem;
+}
+.tscaps-ui-root .gap-8 {
+  gap: 2rem;
+}
+.tscaps-ui-root .gap-\[2px\] {
+  gap: 2px;
+}
+.tscaps-ui-root .gap-\[3px\] {
+  gap: 3px;
+}
+.tscaps-ui-root .gap-\[7px\] {
+  gap: 7px;
+}
+.tscaps-ui-root .space-y-1 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.25rem * var(--tw-space-y-reverse));
+}
+.tscaps-ui-root .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+}
+.tscaps-ui-root .self-start {
+  align-self: flex-start;
+}
+.tscaps-ui-root .self-center {
+  align-self: center;
+}
+.tscaps-ui-root .overflow-auto {
+  overflow: auto;
+}
+.tscaps-ui-root .overflow-hidden {
+  overflow: hidden;
+}
+.tscaps-ui-root .overflow-visible {
+  overflow: visible;
+}
+.tscaps-ui-root .overflow-x-auto {
+  overflow-x: auto;
+}
+.tscaps-ui-root .overflow-y-auto {
+  overflow-y: auto;
+}
+.tscaps-ui-root .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tscaps-ui-root .text-ellipsis {
+  text-overflow: ellipsis;
+}
+.tscaps-ui-root .whitespace-nowrap {
+  white-space: nowrap;
+}
+.tscaps-ui-root .whitespace-pre-wrap {
+  white-space: pre-wrap;
+}
+.tscaps-ui-root .rounded {
+  border-radius: 0.25rem;
+}
+.tscaps-ui-root .rounded-\[1px\] {
+  border-radius: 1px;
+}
+.tscaps-ui-root .rounded-\[2px\] {
+  border-radius: 2px;
+}
+.tscaps-ui-root .rounded-\[3px\] {
+  border-radius: 3px;
+}
+.tscaps-ui-root .rounded-full {
+  border-radius: 9999px;
+}
+.tscaps-ui-root .rounded-lg {
+  border-radius: 12px;
+}
+.tscaps-ui-root .rounded-md {
+  border-radius: 8px;
+}
+.tscaps-ui-root .rounded-pill {
+  border-radius: 9999px;
+}
+.tscaps-ui-root .rounded-sm {
+  border-radius: 6px;
+}
+.tscaps-ui-root .rounded-xs {
+  border-radius: 4px;
+}
+.tscaps-ui-root .rounded-t-xl {
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
+}
+.tscaps-ui-root .border {
+  border-width: 1px;
+}
+.tscaps-ui-root .border-0 {
+  border-width: 0px;
+}
+.tscaps-ui-root .border-\[1\.5px\] {
+  border-width: 1.5px;
+}
+.tscaps-ui-root .border-b {
+  border-bottom-width: 1px;
+}
+.tscaps-ui-root .border-l {
+  border-left-width: 1px;
+}
+.tscaps-ui-root .border-t {
+  border-top-width: 1px;
+}
+.tscaps-ui-root .border-dashed {
+  border-style: dashed;
+}
+.tscaps-ui-root .border-none {
+  border-style: none;
+}
+.tscaps-ui-root .border-accent {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-accent) / var(--tw-border-opacity, 1));
+}
+.tscaps-ui-root .border-accent\/45 {
+  border-color: rgb(var(--color-accent) / 0.45);
+}
+.tscaps-ui-root .border-accent\/60 {
+  border-color: rgb(var(--color-accent) / 0.6);
+}
+.tscaps-ui-root .border-accent\/70 {
+  border-color: rgb(var(--color-accent) / 0.7);
+}
+.tscaps-ui-root .border-danger {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-danger) / var(--tw-border-opacity, 1));
+}
+.tscaps-ui-root .border-danger\/30 {
+  border-color: rgb(var(--color-danger) / 0.3);
+}
+.tscaps-ui-root .border-danger\/40 {
+  border-color: rgb(var(--color-danger) / 0.4);
+}
+.tscaps-ui-root .border-edge-medium {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-edge-medium) / var(--tw-border-opacity, 1));
+}
+.tscaps-ui-root .border-edge-strong {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-edge-strong) / var(--tw-border-opacity, 1));
+}
+.tscaps-ui-root .border-edge-subtle {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-edge-subtle) / var(--tw-border-opacity, 1));
+}
+.tscaps-ui-root .border-fg-faint {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-fg-faint) / var(--tw-border-opacity, 1));
+}
+.tscaps-ui-root .border-rose-500\/30 {
+  border-color: rgb(244 63 94 / 0.3);
+}
+.tscaps-ui-root .border-transparent {
+  border-color: transparent;
+}
+.tscaps-ui-root .bg-accent {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-accent) / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-accent\/10 {
+  background-color: rgb(var(--color-accent) / 0.1);
+}
+.tscaps-ui-root .bg-accent\/15 {
+  background-color: rgb(var(--color-accent) / 0.15);
+}
+.tscaps-ui-root .bg-accent\/20 {
+  background-color: rgb(var(--color-accent) / 0.2);
+}
+.tscaps-ui-root .bg-accent\/25 {
+  background-color: rgb(var(--color-accent) / 0.25);
+}
+.tscaps-ui-root .bg-accent\/80 {
+  background-color: rgb(var(--color-accent) / 0.8);
+}
+.tscaps-ui-root .bg-black {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 0 0 / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-black\/60 {
+  background-color: rgb(0 0 0 / 0.6);
+}
+.tscaps-ui-root .bg-black\/70 {
+  background-color: rgb(0 0 0 / 0.7);
+}
+.tscaps-ui-root .bg-current {
+  background-color: currentColor;
+}
+.tscaps-ui-root .bg-danger {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-danger) / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-danger\/10 {
+  background-color: rgb(var(--color-danger) / 0.1);
+}
+.tscaps-ui-root .bg-danger\/15 {
+  background-color: rgb(var(--color-danger) / 0.15);
+}
+.tscaps-ui-root .bg-edge-strong {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-edge-strong) / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-edge-subtle {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-edge-subtle) / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-fg-faint {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-fg-faint) / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-fg-faint\/50 {
+  background-color: rgb(var(--color-fg-faint) / 0.5);
+}
+.tscaps-ui-root .bg-fg-muted {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-fg-muted) / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-info {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-info) / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-info\/10 {
+  background-color: rgb(var(--color-info) / 0.1);
+}
+.tscaps-ui-root .bg-rose-500\/10 {
+  background-color: rgb(244 63 94 / 0.1);
+}
+.tscaps-ui-root .bg-surface-0 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-0) / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-surface-0\/80 {
+  background-color: rgb(var(--color-surface-0) / 0.8);
+}
+.tscaps-ui-root .bg-surface-0\/85 {
+  background-color: rgb(var(--color-surface-0) / 0.85);
+}
+.tscaps-ui-root .bg-surface-1 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-1) / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-surface-1\/70 {
+  background-color: rgb(var(--color-surface-1) / 0.7);
+}
+.tscaps-ui-root .bg-surface-1\/80 {
+  background-color: rgb(var(--color-surface-1) / 0.8);
+}
+.tscaps-ui-root .bg-surface-2 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-2) / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-surface-2\/80 {
+  background-color: rgb(var(--color-surface-2) / 0.8);
+}
+.tscaps-ui-root .bg-surface-3 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-3) / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-surface-3\/40 {
+  background-color: rgb(var(--color-surface-3) / 0.4);
+}
+.tscaps-ui-root .bg-transparent {
+  background-color: transparent;
+}
+.tscaps-ui-root .bg-warning {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-warning) / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-warning\/10 {
+  background-color: rgb(var(--color-warning) / 0.1);
+}
+.tscaps-ui-root .bg-white {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+.tscaps-ui-root .bg-gradient-to-b {
+  background-image: linear-gradient(to bottom, var(--tw-gradient-stops));
+}
+.tscaps-ui-root .from-transparent {
+  --tw-gradient-from: transparent var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(0 0 0 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+.tscaps-ui-root .to-surface-1 {
+  --tw-gradient-to: rgb(var(--color-surface-1) / 1) var(--tw-gradient-to-position);
+}
+.tscaps-ui-root .object-contain {
+  object-fit: contain;
+}
+.tscaps-ui-root .object-cover {
+  object-fit: cover;
+}
+.tscaps-ui-root .p-0 {
+  padding: 0px;
+}
+.tscaps-ui-root .p-0\.5 {
+  padding: 0.125rem;
+}
+.tscaps-ui-root .p-1 {
+  padding: 0.25rem;
+}
+.tscaps-ui-root .p-2 {
+  padding: 0.5rem;
+}
+.tscaps-ui-root .p-3 {
+  padding: 0.75rem;
+}
+.tscaps-ui-root .p-4 {
+  padding: 1rem;
+}
+.tscaps-ui-root .p-5 {
+  padding: 1.25rem;
+}
+.tscaps-ui-root .p-6 {
+  padding: 1.5rem;
+}
+.tscaps-ui-root .p-\[2px\] {
+  padding: 2px;
+}
+.tscaps-ui-root .px-1 {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+.tscaps-ui-root .px-1\.5 {
+  padding-left: 0.375rem;
+  padding-right: 0.375rem;
+}
+.tscaps-ui-root .px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+.tscaps-ui-root .px-2\.5 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+.tscaps-ui-root .px-20 {
+  padding-left: 5rem;
+  padding-right: 5rem;
+}
+.tscaps-ui-root .px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.tscaps-ui-root .px-3\.5 {
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+}
+.tscaps-ui-root .px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.tscaps-ui-root .px-5 {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+.tscaps-ui-root .px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+.tscaps-ui-root .px-\[5px\] {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+.tscaps-ui-root .py-0 {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+.tscaps-ui-root .py-0\.5 {
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+}
+.tscaps-ui-root .py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+.tscaps-ui-root .py-1\.5 {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+.tscaps-ui-root .py-10 {
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
+}
+.tscaps-ui-root .py-12 {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+.tscaps-ui-root .py-16 {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+.tscaps-ui-root .py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+.tscaps-ui-root .py-20 {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+.tscaps-ui-root .py-3 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+.tscaps-ui-root .py-6 {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+.tscaps-ui-root .py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+.tscaps-ui-root .py-\[18px\] {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+.tscaps-ui-root .py-\[3px\] {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+.tscaps-ui-root .py-\[5px\] {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.tscaps-ui-root .pb-1 {
+  padding-bottom: 0.25rem;
+}
+.tscaps-ui-root .pb-1\.5 {
+  padding-bottom: 0.375rem;
+}
+.tscaps-ui-root .pb-2 {
+  padding-bottom: 0.5rem;
+}
+.tscaps-ui-root .pb-3 {
+  padding-bottom: 0.75rem;
+}
+.tscaps-ui-root .pb-3\.5 {
+  padding-bottom: 0.875rem;
+}
+.tscaps-ui-root .pl-1 {
+  padding-left: 0.25rem;
+}
+.tscaps-ui-root .pl-2 {
+  padding-left: 0.5rem;
+}
+.tscaps-ui-root .pl-2\.5 {
+  padding-left: 0.625rem;
+}
+.tscaps-ui-root .pl-4 {
+  padding-left: 1rem;
+}
+.tscaps-ui-root .pl-5 {
+  padding-left: 1.25rem;
+}
+.tscaps-ui-root .pl-px {
+  padding-left: 1px;
+}
+.tscaps-ui-root .pr-1\.5 {
+  padding-right: 0.375rem;
+}
+.tscaps-ui-root .pr-2 {
+  padding-right: 0.5rem;
+}
+.tscaps-ui-root .pr-2\.5 {
+  padding-right: 0.625rem;
+}
+.tscaps-ui-root .pr-7 {
+  padding-right: 1.75rem;
+}
+.tscaps-ui-root .pt-0\.5 {
+  padding-top: 0.125rem;
+}
+.tscaps-ui-root .pt-1 {
+  padding-top: 0.25rem;
+}
+.tscaps-ui-root .pt-3 {
+  padding-top: 0.75rem;
+}
+.tscaps-ui-root .pt-\[5px\] {
+  padding-top: 5px;
+}
+.tscaps-ui-root .text-left {
+  text-align: left;
+}
+.tscaps-ui-root .text-center {
+  text-align: center;
+}
+.tscaps-ui-root .text-right {
+  text-align: right;
+}
+.tscaps-ui-root .font-mono {
+  font-family: JetBrains Mono Variable, ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.tscaps-ui-root .font-sans {
+  font-family: Inter Variable, system-ui, sans-serif;
+}
+.tscaps-ui-root .text-2xl {
+  font-size: 1.625rem;
+  line-height: 1.2;
+}
+.tscaps-ui-root .text-2xs {
+  font-size: 0.75rem;
+  line-height: 1.15;
+}
+.tscaps-ui-root .text-3xl {
+  font-size: 1.875rem;
+  line-height: 1.15;
+}
+.tscaps-ui-root .text-3xs {
+  font-size: 0.6875rem;
+  line-height: 1;
+}
+.tscaps-ui-root .text-4xl {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+}
+.tscaps-ui-root .text-\[9px\] {
+  font-size: 9px;
+}
+.tscaps-ui-root .text-base {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.tscaps-ui-root .text-md {
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+.tscaps-ui-root .text-sm {
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+.tscaps-ui-root .text-xs {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+.tscaps-ui-root .font-medium {
+  font-weight: 500;
+}
+.tscaps-ui-root .font-semibold {
+  font-weight: 600;
+}
+.tscaps-ui-root .uppercase {
+  text-transform: uppercase;
+}
+.tscaps-ui-root .lowercase {
+  text-transform: lowercase;
+}
+.tscaps-ui-root .normal-case {
+  text-transform: none;
+}
+.tscaps-ui-root .italic {
+  font-style: italic;
+}
+.tscaps-ui-root .ordinal {
+  --tw-ordinal: ordinal;
+  font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
+}
+.tscaps-ui-root .tabular-nums {
+  --tw-numeric-spacing: tabular-nums;
+  font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
+}
+.tscaps-ui-root .leading-none {
+  line-height: 1;
+}
+.tscaps-ui-root .leading-normal {
+  line-height: 1.5;
+}
+.tscaps-ui-root .leading-snug {
+  line-height: 1.375;
+}
+.tscaps-ui-root .tracking-\[-0\.005em\] {
+  letter-spacing: -0.005em;
+}
+.tscaps-ui-root .tracking-\[-0\.022em\] {
+  letter-spacing: -0.022em;
+}
+.tscaps-ui-root .tracking-\[-0\.04em\] {
+  letter-spacing: -0.04em;
+}
+.tscaps-ui-root .tracking-\[0\.06em\] {
+  letter-spacing: 0.06em;
+}
+.tscaps-ui-root .tracking-\[0\.08em\] {
+  letter-spacing: 0.08em;
+}
+.tscaps-ui-root .tracking-normal {
+  letter-spacing: 0em;
+}
+.tscaps-ui-root .tracking-tighter {
+  letter-spacing: -0.05em;
+}
+.tscaps-ui-root .tracking-wider {
+  letter-spacing: 0.05em;
+}
+.tscaps-ui-root .text-accent {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-accent) / var(--tw-text-opacity, 1));
+}
+.tscaps-ui-root .text-danger {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-danger) / var(--tw-text-opacity, 1));
+}
+.tscaps-ui-root .text-danger\/75 {
+  color: rgb(var(--color-danger) / 0.75);
+}
+.tscaps-ui-root .text-fg-faint {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-faint) / var(--tw-text-opacity, 1));
+}
+.tscaps-ui-root .text-fg-muted {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-muted) / var(--tw-text-opacity, 1));
+}
+.tscaps-ui-root .text-fg-primary {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-primary) / var(--tw-text-opacity, 1));
+}
+.tscaps-ui-root .text-fg-secondary {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-secondary) / var(--tw-text-opacity, 1));
+}
+.tscaps-ui-root .text-info {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-info) / var(--tw-text-opacity, 1));
+}
+.tscaps-ui-root .text-info\/75 {
+  color: rgb(var(--color-info) / 0.75);
+}
+.tscaps-ui-root .text-rose-500 {
+  --tw-text-opacity: 1;
+  color: rgb(244 63 94 / var(--tw-text-opacity, 1));
+}
+.tscaps-ui-root .text-surface-1 {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-surface-1) / var(--tw-text-opacity, 1));
+}
+.tscaps-ui-root .text-warning {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-warning) / var(--tw-text-opacity, 1));
+}
+.tscaps-ui-root .text-white {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+.tscaps-ui-root .underline {
+  text-decoration-line: underline;
+}
+.tscaps-ui-root .line-through {
+  text-decoration-line: line-through;
+}
+.tscaps-ui-root .underline-offset-2 {
+  text-underline-offset: 2px;
+}
+.tscaps-ui-root .accent-accent {
+  accent-color: rgb(var(--color-accent) / 1);
+}
+.tscaps-ui-root .opacity-0 {
+  opacity: 0;
+}
+.tscaps-ui-root .opacity-100 {
+  opacity: 1;
+}
+.tscaps-ui-root .opacity-40 {
+  opacity: 0.4;
+}
+.tscaps-ui-root .opacity-50 {
+  opacity: 0.5;
+}
+.tscaps-ui-root .opacity-60 {
+  opacity: 0.6;
+}
+.tscaps-ui-root .opacity-75 {
+  opacity: 0.75;
+}
+.tscaps-ui-root .shadow {
+  --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.tscaps-ui-root .shadow-md {
+  --tw-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  --tw-shadow-colored: 0 6px 16px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.tscaps-ui-root .shadow-raised {
+  --tw-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --tw-shadow-colored: 0 1px 2px var(--tw-shadow-color), inset 0 1px 0 var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.tscaps-ui-root .shadow-sm {
+  --tw-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --tw-shadow-colored: 0 1px 2px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.tscaps-ui-root .outline-none {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.tscaps-ui-root .outline {
+  outline-style: solid;
+}
+.tscaps-ui-root .\!ring {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color) !important;
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color) !important;
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000) !important;
+}
+.tscaps-ui-root .ring {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+.tscaps-ui-root .ring-1 {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+.tscaps-ui-root .ring-2 {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+.tscaps-ui-root .ring-inset {
+  --tw-ring-inset: inset;
+}
+.tscaps-ui-root .ring-accent {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(var(--color-accent) / var(--tw-ring-opacity, 1));
+}
+.tscaps-ui-root .ring-accent\/40 {
+  --tw-ring-color: rgb(var(--color-accent) / 0.4);
+}
+.tscaps-ui-root .ring-black\/30 {
+  --tw-ring-color: rgb(0 0 0 / 0.3);
+}
+.tscaps-ui-root .ring-offset-2 {
+  --tw-ring-offset-width: 2px;
+}
+.tscaps-ui-root .ring-offset-surface-1 {
+  --tw-ring-offset-color: rgb(var(--color-surface-1) / 1);
+}
+.tscaps-ui-root .blur {
+  --tw-blur: blur(8px);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+.tscaps-ui-root .filter {
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+.tscaps-ui-root .backdrop-blur-\[2px\] {
+  --tw-backdrop-blur: blur(2px);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+.tscaps-ui-root .backdrop-blur-sm {
+  --tw-backdrop-blur: blur(4px);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+.tscaps-ui-root .backdrop-brightness-\[0\.55\] {
+  --tw-backdrop-brightness: brightness(0.55);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+.tscaps-ui-root .backdrop-grayscale {
+  --tw-backdrop-grayscale: grayscale(100%);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+.tscaps-ui-root .backdrop-filter {
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+.tscaps-ui-root .transition {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-\[background-color\2c border-color\2c box-shadow\] {
+  transition-property: background-color,border-color,box-shadow;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-\[background-color\2c color\2c opacity\] {
+  transition-property: background-color,color,opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-\[background-color\2c width\2c height\] {
+  transition-property: background-color,width,height;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-\[color\2c background-color\2c box-shadow\] {
+  transition-property: color,background-color,box-shadow;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-\[color\2c background-color\] {
+  transition-property: color,background-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-\[grid-template-columns\] {
+  transition-property: grid-template-columns;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-\[grid-template-rows\2c margin-top\] {
+  transition-property: grid-template-rows,margin-top;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-\[left\2c top\] {
+  transition-property: left,top;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-\[opacity\2c border-color\2c color\2c transform\] {
+  transition-property: opacity,border-color,color,transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-\[opacity\2c color\2c background-color\] {
+  transition-property: opacity,color,background-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-\[opacity\2c transform\] {
+  transition-property: opacity,transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-\[transform\2c background-color\] {
+  transition-property: transform,background-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-\[transform\2c opacity\] {
+  transition-property: transform,opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-colors {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-opacity {
+  transition-property: opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .transition-transform {
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .delay-\[50ms\] {
+  transition-delay: 50ms;
+}
+.tscaps-ui-root .duration-base {
+  transition-duration: 220ms;
+}
+.tscaps-ui-root .duration-quick {
+  transition-duration: 150ms;
+}
+.tscaps-ui-root .ease-emphasized {
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tscaps-ui-root .ease-out {
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+.tscaps-ui-root .ease-standard {
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tscaps-ui-root .will-change-transform {
+  will-change: transform;
+}
+.tscaps-ui-root .\[scrollbar-color\:rgb\(var\(--color-edge-medium\)\)_transparent\] {
+  scrollbar-color: rgb(var(--color-edge-medium)) transparent;
+}
+.tscaps-ui-root .\[scrollbar-color\:rgb\(var\(--color-fg-faint\)\/0\.25\)_transparent\] {
+  scrollbar-color: rgb(var(--color-fg-faint)/0.25) transparent;
+}
+.tscaps-ui-root .\[scrollbar-width\:none\] {
+  scrollbar-width: none;
+}
+.tscaps-ui-root .\[scrollbar-width\:thin\] {
+  scrollbar-width: thin;
+}
+
+.tscaps-ui-root,
+.tscaps-ui-root [data-theme='dark'] {
+  --color-surface-0: 8 8 11;
+  --color-surface-1: 17 17 21;
+  --color-surface-2: 24 24 32;
+  --color-surface-3: 36 36 46;
+
+  --color-edge-subtle: 38 38 48;
+  --color-edge-medium: 60 60 70;
+  --color-edge-strong: 92 92 104;
+
+  --color-fg-primary: 245 245 245;
+  --color-fg-secondary: 204 204 204;
+  --color-fg-muted: 161 161 161;
+  --color-fg-faint: 130 130 138;
+
+  --color-accent: 91 123 230;
+  --color-accent-hover: 117 145 238;
+
+  --color-danger: 248 113 113;
+  --color-warning: 234 179 8;
+  --color-info: 117 145 238;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+
+  /* Motion — see DESIGN_IDENTITY.md §Motion */
+  --motion-instant: 80ms;
+  --motion-quick: 150ms;
+  --motion-base: 220ms;
+  --motion-soft: 320ms;
+  --motion-stage: 560ms;
+
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Legacy aliases preserved for existing call sites; new code should
+     use the unprefixed motion / ease vars above. */
+  --ease-out-soft: var(--ease-emphasized);
+  --duration-fast: var(--motion-quick);
+  --duration-base: var(--motion-base);
+
+  /* Typography — see DESIGN_IDENTITY.md §Typography */
+  --font-sans: 'Inter Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-feature-sans: 'cv11' on, 'ss03' on, 'ss01' on;
+}
+
+.tscaps-ui-root [data-theme='light'] {
+  /* Warm eggshell surfaces (not pure white) for long editing sessions. */
+  --color-surface-0: 250 248 244;
+  --color-surface-1: 244 241 235;
+  --color-surface-2: 234 230 221;
+  --color-surface-3: 219 213 201;
+
+  --color-edge-subtle: 227 221 211;
+  --color-edge-medium: 207 200 187;
+  --color-edge-strong: 158 152 138;
+
+  --color-fg-primary: 28 25 22;
+  --color-fg-secondary: 64 58 51;
+  --color-fg-muted: 90 84 75;
+  --color-fg-faint: 110 100 87;
+
+  --color-accent: 47 77 199;
+  --color-accent-hover: 36 62 168;
+
+  --color-danger: 185 28 28;
+  --color-warning: 161 98 7;
+  --color-info: 47 77 199;
+
+  --shadow-sm: 0 1px 2px rgba(80, 70, 50, 0.06);
+  --shadow-md: 0 4px 12px rgba(80, 70, 50, 0.10);
+  --shadow-lg: 0 8px 24px rgba(80, 70, 50, 0.14);
+}
+
+.tscaps-ui-root .placeholder\:text-fg-faint::placeholder {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-faint) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .before\:absolute::before {
+  content: var(--tw-content);
+  position: absolute;
+}
+
+.tscaps-ui-root .before\:bottom-1\.5::before {
+  content: var(--tw-content);
+  bottom: 0.375rem;
+}
+
+.tscaps-ui-root .before\:left-0::before {
+  content: var(--tw-content);
+  left: 0px;
+}
+
+.tscaps-ui-root .before\:top-1\.5::before {
+  content: var(--tw-content);
+  top: 0.375rem;
+}
+
+.tscaps-ui-root .before\:w-0\.5::before {
+  content: var(--tw-content);
+  width: 0.125rem;
+}
+
+.tscaps-ui-root .before\:rounded-r-\[2px\]::before {
+  content: var(--tw-content);
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+
+.tscaps-ui-root .before\:bg-accent::before {
+  content: var(--tw-content);
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-accent) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .before\:content-\[\'\'\]::before {
+  --tw-content: '';
+  content: var(--tw-content);
+}
+
+.tscaps-ui-root .first\:border-t-0:first-child {
+  border-top-width: 0px;
+}
+
+.tscaps-ui-root .focus-within\:border-accent:focus-within {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-accent) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .focus-within\:bg-surface-1:focus-within {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-1) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .focus-within\:ring-2:focus-within {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+
+.tscaps-ui-root .focus-within\:ring-accent\/30:focus-within {
+  --tw-ring-color: rgb(var(--color-accent) / 0.3);
+}
+
+.tscaps-ui-root .hover\:scale-110:hover {
+  --tw-scale-x: 1.1;
+  --tw-scale-y: 1.1;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.tscaps-ui-root .hover\:border-accent:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-accent) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:border-accent-hover:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-accent-hover) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:border-danger:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-danger) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:border-danger\/40:hover {
+  border-color: rgb(var(--color-danger) / 0.4);
+}
+
+.tscaps-ui-root .hover\:border-danger\/60:hover {
+  border-color: rgb(var(--color-danger) / 0.6);
+}
+
+.tscaps-ui-root .hover\:border-edge-medium:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-edge-medium) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:border-edge-strong:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-edge-strong) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:bg-accent-hover:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-accent-hover) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:bg-danger:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-danger) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:bg-danger\/10:hover {
+  background-color: rgb(var(--color-danger) / 0.1);
+}
+
+.tscaps-ui-root .hover\:bg-danger\/15:hover {
+  background-color: rgb(var(--color-danger) / 0.15);
+}
+
+.tscaps-ui-root .hover\:bg-danger\/20:hover {
+  background-color: rgb(var(--color-danger) / 0.2);
+}
+
+.tscaps-ui-root .hover\:bg-info\/10:hover {
+  background-color: rgb(var(--color-info) / 0.1);
+}
+
+.tscaps-ui-root .hover\:bg-info\/15:hover {
+  background-color: rgb(var(--color-info) / 0.15);
+}
+
+.tscaps-ui-root .hover\:bg-surface-1:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-1) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:bg-surface-2:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-2) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:bg-surface-3:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-3) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:text-accent-hover:hover {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-accent-hover) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:text-danger:hover {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-danger) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:text-fg-primary:hover {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-primary) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:text-fg-secondary:hover {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-secondary) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:text-info:hover {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-info) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .hover\:underline:hover {
+  text-decoration-line: underline;
+}
+
+.tscaps-ui-root .hover\:opacity-100:hover {
+  opacity: 1;
+}
+
+.tscaps-ui-root .focus-within\:hover\:border-accent:hover:focus-within {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-accent) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .focus\:border-accent:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-accent) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .focus\:border-edge-medium:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-edge-medium) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .focus\:outline-none:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.tscaps-ui-root .focus-visible\:pointer-events-auto:focus-visible {
+  pointer-events: auto;
+}
+
+.tscaps-ui-root .focus-visible\:border:focus-visible {
+  border-width: 1px;
+}
+
+.tscaps-ui-root .focus-visible\:border-accent:focus-visible {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-accent) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .focus-visible\:border-danger:focus-visible {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-danger) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .focus-visible\:bg-danger\/10:focus-visible {
+  background-color: rgb(var(--color-danger) / 0.1);
+}
+
+.tscaps-ui-root .focus-visible\:bg-danger\/15:focus-visible {
+  background-color: rgb(var(--color-danger) / 0.15);
+}
+
+.tscaps-ui-root .focus-visible\:bg-info\/10:focus-visible {
+  background-color: rgb(var(--color-info) / 0.1);
+}
+
+.tscaps-ui-root .focus-visible\:bg-info\/15:focus-visible {
+  background-color: rgb(var(--color-info) / 0.15);
+}
+
+.tscaps-ui-root .focus-visible\:bg-surface-1:focus-visible {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-1) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .focus-visible\:bg-surface-2:focus-visible {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-2) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .focus-visible\:bg-surface-3:focus-visible {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-3) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .focus-visible\:text-danger:focus-visible {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-danger) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .focus-visible\:text-fg-primary:focus-visible {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-primary) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .focus-visible\:text-fg-secondary:focus-visible {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-secondary) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .focus-visible\:text-info:focus-visible {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-info) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .focus-visible\:opacity-100:focus-visible {
+  opacity: 1;
+}
+
+.tscaps-ui-root .focus-visible\:outline-none:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.tscaps-ui-root .focus-visible\:ring-2:focus-visible {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+
+.tscaps-ui-root .focus-visible\:ring-accent:focus-visible {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(var(--color-accent) / var(--tw-ring-opacity, 1));
+}
+
+.tscaps-ui-root .focus-visible\:ring-accent\/30:focus-visible {
+  --tw-ring-color: rgb(var(--color-accent) / 0.3);
+}
+
+.tscaps-ui-root .focus-visible\:ring-accent\/40:focus-visible {
+  --tw-ring-color: rgb(var(--color-accent) / 0.4);
+}
+
+.tscaps-ui-root .focus-visible\:ring-danger\/30:focus-visible {
+  --tw-ring-color: rgb(var(--color-danger) / 0.3);
+}
+
+.tscaps-ui-root .focus-visible\:ring-offset-2:focus-visible {
+  --tw-ring-offset-width: 2px;
+}
+
+.tscaps-ui-root .focus-visible\:ring-offset-surface-0:focus-visible {
+  --tw-ring-offset-color: rgb(var(--color-surface-0) / 1);
+}
+
+.tscaps-ui-root .active\:duration-instant:active {
+  transition-duration: 80ms;
+}
+
+.tscaps-ui-root .enabled\:hover\:border-accent:hover:enabled {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-accent) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .enabled\:hover\:border-danger:hover:enabled {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-danger) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .enabled\:hover\:border-edge-medium:hover:enabled {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-edge-medium) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .enabled\:hover\:border-edge-strong:hover:enabled {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-edge-strong) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .enabled\:hover\:bg-danger\/25:hover:enabled {
+  background-color: rgb(var(--color-danger) / 0.25);
+}
+
+.tscaps-ui-root .enabled\:hover\:bg-surface-2:hover:enabled {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-2) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .enabled\:hover\:bg-surface-3:hover:enabled {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-3) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .enabled\:hover\:text-fg-primary:hover:enabled {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-primary) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .enabled\:hover\:text-fg-secondary:hover:enabled {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-secondary) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .disabled\:cursor-default:disabled {
+  cursor: default;
+}
+
+.tscaps-ui-root .disabled\:cursor-not-allowed:disabled {
+  cursor: not-allowed;
+}
+
+.tscaps-ui-root .disabled\:text-fg-faint:disabled {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-faint) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .disabled\:text-fg-muted:disabled {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-muted) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .disabled\:opacity-40:disabled {
+  opacity: 0.4;
+}
+
+.tscaps-ui-root .disabled\:opacity-50:disabled {
+  opacity: 0.5;
+}
+
+.tscaps-ui-root .disabled\:hover\:bg-transparent:hover:disabled {
+  background-color: transparent;
+}
+
+.tscaps-ui-root .disabled\:hover\:text-fg-faint:hover:disabled {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-faint) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .disabled\:hover\:text-fg-secondary:hover:disabled {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-secondary) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .group\/search:focus-within .group-focus-within\/search\:text-fg-muted {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-muted) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .group\/card:focus-within .group-focus-within\/card\:opacity-100 {
+  opacity: 1;
+}
+
+.tscaps-ui-root .group\/color:focus-within .group-focus-within\/color\:opacity-100 {
+  opacity: 1;
+}
+
+.tscaps-ui-root .group\/line:hover .group-hover\/line\:pointer-events-auto {
+  pointer-events: auto;
+}
+
+.tscaps-ui-root .group\/section:hover .group-hover\/section\:translate-y-0 {
+  --tw-translate-y: 0px;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.tscaps-ui-root .group\/add-scene:hover .group-hover\/add-scene\:grid-cols-\[1fr\] {
+  grid-template-columns: 1fr;
+}
+
+.tscaps-ui-root .group\/add-scene:hover .group-hover\/add-scene\:bg-edge-medium {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-edge-medium) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .group\/handle:hover .group-hover\/handle\:bg-edge-strong {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-edge-strong) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .group:hover .group-hover\:bg-fg-faint {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-fg-faint) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .group\/chip:hover .group-hover\/chip\:text-fg-primary {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-primary) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .group:hover .group-hover\:text-accent-hover {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-accent-hover) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .group\/card:hover .group-hover\/card\:opacity-100 {
+  opacity: 1;
+}
+
+.tscaps-ui-root .group\/chip:hover .group-hover\/chip\:opacity-100 {
+  opacity: 1;
+}
+
+.tscaps-ui-root .group\/chip:hover .group-hover\/chip\:opacity-40 {
+  opacity: 0.4;
+}
+
+.tscaps-ui-root .group\/color:hover .group-hover\/color\:opacity-100 {
+  opacity: 1;
+}
+
+.tscaps-ui-root .group\/line:hover .group-hover\/line\:opacity-100 {
+  opacity: 1;
+}
+
+.tscaps-ui-root .group\/option:hover .group-hover\/option\:opacity-100 {
+  opacity: 1;
+}
+
+.tscaps-ui-root .group\/section:hover .group-hover\/section\:opacity-100 {
+  opacity: 1;
+}
+
+.tscaps-ui-root .group\/segment:hover .group-hover\/segment\:opacity-100 {
+  opacity: 1;
+}
+
+.tscaps-ui-root .group\/tile:hover .group-hover\/tile\:opacity-100 {
+  opacity: 1;
+}
+
+.tscaps-ui-root .group:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+
+.tscaps-ui-root .group\/add-scene:focus-visible .group-focus-visible\/add-scene\:grid-cols-\[1fr\] {
+  grid-template-columns: 1fr;
+}
+
+.tscaps-ui-root .group\/add-scene:focus-visible .group-focus-visible\/add-scene\:bg-edge-medium {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-edge-medium) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .group:focus-visible .group-focus-visible\:text-accent-hover {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-accent-hover) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .aria-expanded\:text-fg-secondary[aria-expanded="true"] {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-fg-secondary) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .group[aria-expanded="true"] .group-aria-expanded\:rotate-180 {
+  --tw-rotate: 180deg;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.tscaps-ui-root .group[aria-expanded="true"] .group-aria-expanded\:opacity-100 {
+  opacity: 1;
+}
+
+.tscaps-ui-root .data-\[state\=inactive\]\:hidden[data-state="inactive"] {
+  display: none;
+}
+
+.tscaps-ui-root .data-\[state\=checked\]\:translate-x-\[15px\][data-state="checked"] {
+  --tw-translate-x: 15px;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+@keyframes fade-out {
+
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+.tscaps-ui-root .data-\[state\=closed\]\:animate-fade-out[data-state="closed"] {
+  animation: fade-out 0.08s ease;
+}
+
+@keyframes fade-in {
+
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.tscaps-ui-root .data-\[state\=delayed-open\]\:animate-fade-in[data-state="delayed-open"] {
+  animation: fade-in 0.12s ease;
+}
+
+@keyframes fade-in {
+
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.tscaps-ui-root .data-\[state\=open\]\:animate-fade-in[data-state="open"] {
+  animation: fade-in 0.12s ease;
+}
+
+.tscaps-ui-root .data-\[state\=checked\]\:border-accent[data-state="checked"] {
+  --tw-border-opacity: 1;
+  border-color: rgb(var(--color-accent) / var(--tw-border-opacity, 1));
+}
+
+.tscaps-ui-root .data-\[state\=active\]\:bg-surface-3[data-state="active"] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-surface-3) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .data-\[state\=checked\]\:bg-accent[data-state="checked"] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-accent) / var(--tw-bg-opacity, 1));
+}
+
+.tscaps-ui-root .data-\[state\=checked\]\:bg-accent\/25[data-state="checked"] {
+  background-color: rgb(var(--color-accent) / 0.25);
+}
+
+.tscaps-ui-root .data-\[state\=active\]\:text-accent[data-state="active"] {
+  --tw-text-opacity: 1;
+  color: rgb(var(--color-accent) / var(--tw-text-opacity, 1));
+}
+
+.tscaps-ui-root .data-\[state\=active\]\:shadow-raised[data-state="active"] {
+  --tw-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --tw-shadow-colored: 0 1px 2px var(--tw-shadow-color), inset 0 1px 0 var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.tscaps-ui-root .group\/handle[data-resize-handle-state="drag"] .group-data-\[resize-handle-state\=drag\]\/handle\:bg-accent {
+  --tw-bg-opacity: 1;
+  background-color: rgb(var(--color-accent) / var(--tw-bg-opacity, 1));
+}
+
+@media (min-width: 1024px) {
+
+  .tscaps-ui-root .lg\:mb-3 {
+    margin-bottom: 0.75rem;
+  }
+
+  .tscaps-ui-root .lg\:flex {
+    display: flex;
+  }
+
+  .tscaps-ui-root .lg\:min-w-\[120px\] {
+    min-width: 120px;
+  }
+
+  .tscaps-ui-root .lg\:max-w-\[320px\] {
+    max-width: 320px;
+  }
+
+  .tscaps-ui-root .lg\:flex-row {
+    flex-direction: row;
+  }
+
+  .tscaps-ui-root .lg\:flex-col {
+    flex-direction: column;
+  }
+
+  .tscaps-ui-root .lg\:gap-1 {
+    gap: 0.25rem;
+  }
+
+  .tscaps-ui-root .lg\:gap-1\.5 {
+    gap: 0.375rem;
+  }
+
+  .tscaps-ui-root .lg\:gap-3 {
+    gap: 0.75rem;
+  }
+
+  .tscaps-ui-root .lg\:overflow-x-visible {
+    overflow-x: visible;
+  }
+
+  .tscaps-ui-root .lg\:border-l {
+    border-left-width: 1px;
+  }
+
+  .tscaps-ui-root .lg\:border-t-0 {
+    border-top-width: 0px;
+  }
+
+  .tscaps-ui-root .lg\:p-2 {
+    padding: 0.5rem;
+  }
+
+  .tscaps-ui-root .lg\:px-24 {
+    padding-left: 6rem;
+    padding-right: 6rem;
+  }
+
+  .tscaps-ui-root .lg\:px-6 {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .tscaps-ui-root .lg\:px-8 {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .tscaps-ui-root .lg\:py-1\.5 {
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+  }
+
+  .tscaps-ui-root .lg\:py-14 {
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .tscaps-ui-root .lg\:py-2 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .tscaps-ui-root .lg\:py-28 {
+    padding-top: 7rem;
+    padding-bottom: 7rem;
+  }
+
+  .tscaps-ui-root .lg\:py-4 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .tscaps-ui-root .lg\:pb-2\.5 {
+    padding-bottom: 0.625rem;
+  }
+
+  .tscaps-ui-root .lg\:pt-1 {
+    padding-top: 0.25rem;
+  }
+
+  .tscaps-ui-root .lg\:text-3xl {
+    font-size: 1.875rem;
+    line-height: 1.15;
+  }
+
+  .tscaps-ui-root .lg\:text-base {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+}
+
+.tscaps-ui-root .\[\&\:\:-webkit-scrollbar\]\:hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.tscaps-ui-root .\[\&_em-emoji-picker\]\:\!h-\[200px\] em-emoji-picker {
+  height: 200px !important;
+}
+
+.tscaps-ui-root .\[\&_em-emoji-picker\]\:\!min-h-0 em-emoji-picker {
+  min-height: 0px !important;
+}
+
+@media(hover:hover) {
+
+  .tscaps-ui-root .\[\@media\(hover\:hover\)\]\:opacity-0 {
+    opacity: 0;
+  }
+}

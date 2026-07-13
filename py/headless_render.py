@@ -10,7 +10,7 @@ spawn fail. To fully avoid inheriting them, the actual browser render is
 delegated to a clean child process (py/_render_child.py) spawned with
 stdin/stdout/stderr = DEVNULL, communicating via temp files.
 """
-import os, sys, json, base64, subprocess, tempfile, logging
+import os, sys, json, base64, subprocess, tempfile, logging, urllib.request, urllib.parse
 
 logger = logging.getLogger("TikTokCaption")
 
@@ -20,11 +20,84 @@ CHILD_SCRIPT = os.path.join(current_dir, "_render_child.py")
 PY_EXE = sys.executable
 TMP = "C:/tmp"
 
+# Cache inlined @font-face CSS (with data: URIs) per font family so we only
+# hit the network once per font, not on every render.
+_FONT_CSS_CACHE: dict = {}
+
+# Canonical Google Fonts family names differ from the "X Variable" names some
+# templates use in CSS. Normalize before querying; also fix known mismatches.
+_FONT_ALIASES = {"Space Grotesque": "Space Grotesk"}
+
+
+def _norm_font(family: str) -> str:
+    f = str(family or "").strip().strip("'\"")
+    # Templates may reference e.g. 'Inter Variable'; the real Google family is
+    # 'Inter' (the variable axis is implied). Strip the suffix for the query.
+    if f.lower().endswith(" variable"):
+        f = f[: -len(" variable")]
+    return _FONT_ALIASES.get(f, f)
+
+
+def _build_google_font_css(family: str) -> str:
+    """Fetch Google Fonts @font-face CSS and inline each font file as a data: URI.
+
+    Returns CSS ready to embed in the SVG (no further network fetch needed)."""
+    family = _norm_font(family)
+    if not family:
+        return ""
+    if family in _FONT_CSS_CACHE:
+        return _FONT_CSS_CACHE[family]
+    try:
+        encoded = urllib.parse.quote(family)
+        # A real browser UA is required so Google serves woff2 (not ttf).
+        ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        # Variable fonts accept the weight-range axis; static-only fonts 400 on
+        # it, so fall back to the plain request in that case.
+        urls = [
+            f"https://fonts.googleapis.com/css2?family={encoded}:wght@100..900&display=swap",
+            f"https://fonts.googleapis.com/css2?family={encoded}&display=swap",
+        ]
+        css = ""
+        last_err = None
+        for url in urls:
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": ua})
+                with urllib.request.urlopen(req, timeout=20) as resp:
+                    css = resp.read().decode("utf-8")
+                break
+            except Exception as e:
+                last_err = e
+                continue
+        if not css:
+            raise last_err or RuntimeError("no CSS")
+        # Inline every url() font file as a base64 data: URI.
+        import re
+        def _inline(m):
+            u = m.group(1)
+            if u.startswith("data:"):
+                return m.group(0)
+            try:
+                fr = urllib.request.Request(u, headers={"User-Agent": ua})
+                with urllib.request.urlopen(fr, timeout=20) as fr2:
+                    data = fr2.read()
+                b64 = base64.b64encode(data).decode("ascii")
+                mime = "font/woff2" if u.endswith(".woff2") else ("font/woff" if u.endswith(".woff") else "application/octet-stream")
+                return f"url(data:{mime};base64,{b64})"
+            except Exception:
+                return m.group(0)
+        css = re.sub(r"url\(\s*['\"]?(.*?)['\"]?\s*\)", _inline, css)
+        _FONT_CSS_CACHE[family] = css
+        return css
+    except Exception as e:
+        logger.warning(f"Failed to fetch Google Fonts CSS for '{family}': {e}")
+        return ""
+
 
 def render_frames(srt: str, css: str, width: int, height: int, inline_styles: dict = None,
                    alignment: dict = None, split_words_into_letters: bool = False,
-                   text_case: str = "none", max_chars: int = 40, max_lines: int = 2,
-                   gap_free: bool = False) -> list:
+                   text_case: str = "none", max_words: int = 12, max_lines: int = 2,
+                    gap_free: bool = False, outline: float = 0.02, outline_color: str = "",
+                    font_family: str = "", outline_style: str = "flat") -> list:
     """Render all caption frames → list of PNG bytes (same engine as preview).
 
     The fps parameter has been removed: the engine always samples at the
@@ -33,14 +106,24 @@ def render_frames(srt: str, css: str, width: int, height: int, inline_styles: di
     """
     req_path = os.path.join(TMP, "render_req.json")
     out_path = os.path.join(TMP, "render_out.json")
+    # Pre-inline the chosen font's @font-face CSS (data: URIs) so the SVG
+    # foreignObject context has the font available. Cached per family.
+    font_css = ""
+    ff = str(font_family or "").strip()
+    if ff and ff != "(template default)":
+        font_css = _build_google_font_css(ff)
     params = {
         "srt": srt, "css": css, "width": width, "height": height,
         "inlineStyles": inline_styles or {},
         "splitWordsIntoLetters": split_words_into_letters,
         "textCase": text_case,
-        "maxChars": max_chars,
+        "maxWords": max_words,
         "maxLines": max_lines,
         "gapFree": gap_free,
+        "outline": outline,
+        "outlineColor": outline_color,
+        "outlineStyle": outline_style,
+        "fontCss": font_css,
     }
     if alignment:
         params["alignment"] = alignment
