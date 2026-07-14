@@ -16,6 +16,7 @@ import { TypographyCssVarBuilder } from '@core/sheets/services/TypographyCssVarB
 import { RotationCssVarBuilder } from '@core/sheets/services/RotationCssVarBuilder';
 import { StyleValuesCssVarsBuilder } from '@core/sheets/services/StyleValuesCssVarsBuilder';
 import { Template } from '@core/templates/domain/Template';
+import { ensureBundledFonts, BUNDLED_GALLERY_FONTS } from './font_loader';
 import { SvgFilterDefinitions, GraphemeWordSplitter } from '@tscaps/engine';
 import { TYPOGRAPHY_DEFAULTS } from '@core/sheets/domain/TypographyConfig';
 import { ROTATION_DEFAULTS } from '@core/sheets/domain/RotationConfig';
@@ -71,6 +72,9 @@ export function mountTemplateSidebar(
   container: HTMLElement,
   opts: { names: string[]; getSelected: () => string | null; onSelect: (name: string) => void },
 ): { dispose: () => void } {
+  // Wire the bundled tscaps fonts into the DOM so gallery cards resolve their
+  // --tscaps-font-family to the real font instead of the system fallback.
+  ensureBundledFonts(BUNDLED_GALLERY_FONTS);
   // Inject the compiled tscaps UI stylesheet once per page.
   if (!document.getElementById('tscaps-ui-css')) {
     const link = document.createElement('link');

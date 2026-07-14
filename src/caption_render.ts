@@ -5,6 +5,7 @@
  * final renderer (CloakBrowser) so preview === output (1:1).
  */
 import { SrtTranscriber } from '@modules/transcription/SrtTranscriber';
+import { ensureBundledFonts, BUNDLED_GALLERY_FONTS } from './font_loader';
 import {
   BoundarySegmentSplitter,
   LimitByCharsSegmentSplitter,
@@ -543,6 +544,10 @@ export async function mountLiveCaption(
   container: HTMLElement,
   opts: CaptionParams,
 ): Promise<LiveCaptionHandle> {
+  // Wire the bundled tscaps fonts into the DOM so the live preview (and any
+  // template) resolves its --tscaps-font-family to the real face instead of
+  // the system fallback. Non-blocking; runs once globally.
+  ensureBundledFonts(BUNDLED_GALLERY_FONTS);
   let doc: any;
   if (opts.usePreviewMock) {
     doc = buildTemplatePreviewDocument();

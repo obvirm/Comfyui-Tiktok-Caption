@@ -6,6 +6,7 @@
 
 import { mountLiveCaption } from './caption_render';
 import { mountTemplateSidebar } from './sidebar_mount';
+import { ensureBundledFonts, BUNDLED_GALLERY_FONTS, normFont, fetchGoogleFontCss } from './font_loader';
 
 const TAG = '[TikTok]';
 
@@ -25,81 +26,11 @@ const PREVIEW_CHECKER_SIZE = '14px 14px';
 const PREVIEW_CHECKER_POS = '0 0, 0 7px, 7px -7px, -7px 0px';
 
 // ── Font loading ───────────────────────────────────────────────────
-// Fonts must be embedded as @font-face with data: URIs inside the SVG
-// foreignObject, because that context is isolated from the main page
-// (where <link>-loaded Google Fonts live). We fetch the @font-face CSS
-// straight from Google (its responses are CORS-enabled, access-control-
-// allow-origin: *) and inline every font file as a data: URI, ONCE per
-// family, cached so renders never refetch. Going direct avoids any
-// in-front reverse proxy that would otherwise intercept a local route.
-const fontCssCache = new Map<string, string>();
-
-// Canonical Google Fonts family names differ from the "X Variable" names some
-// templates use in CSS. Normalize before querying; fix known mismatches.
-const FONT_ALIASES: Record<string, string> = { 'Space Grotesque': 'Space Grotesk' };
-function normFont(family: string): string {
-  let f = String(family || '').trim().replace(/^['"]|['"]$/g, '');
-  if (f.toLowerCase().endsWith(' variable')) f = f.slice(0, -(' variable'.length));
-  return FONT_ALIASES[f] || f;
-}
-
-async function fetchGoogleFontCss(family: string): Promise<string> {
-  const fam = normFont(family);
-  if (!fam) return '';
-  if (fontCssCache.has(fam)) return fontCssCache.get(fam)!;
-  try {
-    // Preferred: our own same-origin /api route. Behind a reverse proxy the
-    // browser's direct CORS fetch to fonts.googleapis.com is blocked, but the
-    // server can fetch + inline the @font-face server-side and return it
-    // same-origin (no CORS). The CSS already has data: URIs inlined.
-    try {
-      const resp = await fetch(`/api/caption/font-css?family=${encodeURIComponent(fam)}`);
-      if (resp.ok) {
-        const css = await resp.text();
-        fontCssCache.set(fam, css);
-        return css;
-      }
-    } catch { /* fall back to a direct Google fetch */ }
-    // Fallback: fetch Google directly (its responses are CORS-enabled) and
-    // inline each font file as a data: URI ourselves.
-    const enc = encodeURIComponent(fam);
-    // Variable fonts accept the weight-range axis; static-only fonts 400 on
-    // that, so fall back to the plain request. The browser sends its own
-    // Chrome UA, so Google returns woff2 (no manual UA spoofing needed).
-    let css = '';
-    for (const cand of [
-      `https://fonts.googleapis.com/css2?family=${enc}:wght@100..900&display=swap`,
-      `https://fonts.googleapis.com/css2?family=${enc}&display=swap`,
-    ]) {
-      try {
-        const resp = await fetch(cand);
-        if (resp.ok) { css = await resp.text(); break; }
-      } catch { /* try next candidate */ }
-    }
-    if (!css) { fontCssCache.set(fam, ''); return ''; }
-    // Inline each font file url() as a data: URI (fonts.gstatic.com is also
-    // CORS-enabled, so the browser can fetch + embed them directly).
-    const urlRegex = /url\(\s*(['"]?)(.*?)\1\s*\)/g;
-    const urls = [...new Set([...css.matchAll(urlRegex)].map(m => m[2]).filter(u => u && !u.startsWith('data:')))];
-    const reps = await Promise.all(urls.map(async (u) => {
-      try {
-        const r = await fetch(u);
-        if (!r.ok) return null;
-        const blob = await r.blob();
-        const dataUrl = await new Promise<string>((res, rej) => {
-          const fr = new FileReader();
-          fr.onloadend = () => res(fr.result as string);
-          fr.onerror = rej;
-          fr.readAsDataURL(blob);
-        });
-        return { u, dataUrl };
-      } catch { return null; }
-    }));
-    for (const rep of reps) if (rep) css = css.split(rep.u).join(rep.dataUrl);
-    fontCssCache.set(fam, css);
-    return css;
-  } catch { fontCssCache.set(fam, ''); return ''; }
-}
+// All @font-face fetching / inlining now lives in ./font_loader.ts
+// (ensureBundledFonts, normFont, fetchGoogleFontCss, BUNDLED_GALLERY_FONTS).
+// The gallery + live preview import them from there so the bundled tscaps
+// fonts are actually registered in the DOM (they were never wired up before,
+// so every gallery card fell back to the SAME system font).
 
 function domEl(node: any): HTMLElement | null {
   if (node.graphcanvas?.node_dom) {
@@ -146,6 +77,10 @@ function setupWidget(node: any): void {
   // only fetch/inject a font when the font (or template) actually changes.
   let lastFontKey = '';
   let cachedFontCss = '';
+  // Wire bundled tscaps fonts into the DOM ONCE (gallery + template preview
+  // need them; they were never registered before, so cards fell back to the
+  // same system font). Resolves async, non-blocking.
+  ensureBundledFonts(BUNDLED_GALLERY_FONTS);
   // Preview background image — PREVIEW ONLY. Never baked into the output
   // frames (which stay transparent for later compositing). Shows the caption
   // composited over a reference image so placement/look can be judged.
