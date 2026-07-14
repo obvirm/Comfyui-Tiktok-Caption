@@ -22,6 +22,28 @@ def list_templates() -> list:
     return sorted(out)
 
 
+# Module-level map: control id → --tscaps-* css var name (shared by
+# _controls_to_vars and apply_overrides so overrides and defaults agree).
+_CONTROL_VAR_MAP = {
+    "primary-color": "--tscaps-primary-color",
+    "highlight-color": "--tscaps-highlight-color",
+    "shadow-color": "--tscaps-shadow-color",
+    "outline-color": "--tscaps-outline-color",
+    "quote-color": "--tscaps-quote-color",
+    "chroma-a": "--tscaps-chroma-a",
+    "chroma-b": "--tscaps-chroma-b",
+    "font-size": "--tscaps-font-size",
+    "font-family": "--tscaps-font-family",
+    "font-weight": "--tscaps-font-weight",
+    "letter-spacing": "--tscaps-letter-spacing",
+    "word-spacing": "--tscaps-word-spacing",
+    "line-spacing": "--tscaps-line-spacing",
+    "rotation": "--tscaps-rotation",
+    "text-align": "--tscaps-text-align",
+    "text-case": "--tscaps-text-transform",
+}
+
+
 def _typography_to_vars(typ: dict) -> dict:
     """Map template.json typography → --tscaps-* CSS variables."""
     v = {}
@@ -54,29 +76,10 @@ def _typography_to_vars(typ: dict) -> dict:
 
 def _controls_to_vars(controls: list) -> dict:
     """Map template.json styleControls[].default → --tscaps-* CSS variables."""
-    # Map control id → css var name
-    id_map = {
-        "primary-color": "--tscaps-primary-color",
-        "highlight-color": "--tscaps-highlight-color",
-        "shadow-color": "--tscaps-shadow-color",
-        "outline-color": "--tscaps-outline-color",
-        "quote-color": "--tscaps-quote-color",
-        "chroma-a": "--tscaps-chroma-a",
-        "chroma-b": "--tscaps-chroma-b",
-        "font-size": "--tscaps-font-size",
-        "font-family": "--tscaps-font-family",
-        "font-weight": "--tscaps-font-weight",
-        "letter-spacing": "--tscaps-letter-spacing",
-        "word-spacing": "--tscaps-word-spacing",
-        "line-spacing": "--tscaps-line-spacing",
-        "rotation": "--tscaps-rotation",
-        "text-align": "--tscaps-text-align",
-        "text-case": "--tscaps-text-transform",
-    }
     v = {}
     for c in controls or []:
         cid = c.get("id")
-        if cid in id_map and "default" in c:
+        if cid in _CONTROL_VAR_MAP and "default" in c:
             val = c["default"]
             if cid == "font-family":
                 # Quote multi-word family names.
@@ -85,8 +88,18 @@ def _controls_to_vars(controls: list) -> dict:
                 val = f"{val}em" if cid != "font-size" else f"{val}cqh"
             if cid == "rotation":
                 val = f"{val}deg"
-            v[id_map[cid]] = str(val)
+            v[_CONTROL_VAR_MAP[cid]] = str(val)
     return v
+
+
+# Expose so apply_overrides resolves the same var name as the defaults.
+_STYLECONTROL_VAR_MAP = _CONTROL_VAR_MAP
+
+
+# Expose the styleControls id_map so apply_overrides can resolve the same
+# --tscaps-* var name a template's own defaults use (e.g. primary-color →
+# --tscaps-primary-color), keeping overrides consistent with the defaults.
+_STYLECONTROL_VAR_MAP = _CONTROL_VAR_MAP
 
 
 def load_template(name: str, font_scale: float = 1.0) -> dict:
@@ -117,3 +130,52 @@ def load_template(name: str, font_scale: float = 1.0) -> dict:
             except ValueError:
                 pass
     return {"css": css, "inlineStyles": inline}
+
+
+# ── Per-template dynamic overrides (sidebar Parameters panel) ──────────────
+# Maps a control-id → value map (written by the browser panel) onto the same
+# --tscaps-* CSS variables load_template produces, so changing a control in
+# the UI updates the render exactly like tscaps merges a sheet over a template.
+_TYPO_VAR_MAP = {
+    "fontFamily": "--tscaps-font-family",
+    "fontSize": "--tscaps-font-size",
+    "fontWeight": "--tscaps-font-weight",
+    "letterSpacing": "--tscaps-letter-spacing",
+    "wordSpacing": "--tscaps-word-spacing",
+    "lineSpacing": "--tscaps-line-spacing",
+    "textAlign": "--tscaps-text-align",
+    "textCase": "--tscaps-text-transform",
+    "fontStyle": "--tscaps-font-style",
+    "textDecoration": "--tscaps-text-decoration",
+}
+
+
+def apply_overrides(overrides: dict, css: str = "") -> dict:
+    """Return a --tscaps-* var map for the given control override map."""
+    out: dict = {}
+    for cid, val in (overrides or {}).items():
+        # styleControls ids → --tscaps-<id> (using the same id_map the
+        # template defaults use, so e.g. primary-color → --tscaps-primary-color).
+        if not cid.startswith("effect:") and cid not in (
+            "verticalAlign", "verticalOffset", "horizontalAlign", "horizontalOffset"
+        ):
+            var = _TYPO_VAR_MAP.get(cid) or _STYLECONTROL_VAR_MAP.get(cid) or f"--tscaps-{cid}"
+            out[var] = _coerce_override(cid, val)
+        # alignment keys are consumed by the node separately (not CSS vars)
+    return out
+
+
+def _coerce_override(cid: str, val) -> str:
+    """Render an override value into the CSS string a --tscaps-* var expects."""
+    if cid == "fontFamily":
+        return f"'{val}'"
+    if cid in ("fontSize",) and not str(val).endswith("cqh"):
+        return f"{val}cqh"
+    if cid in ("letterSpacing", "wordSpacing", "lineSpacing") and isinstance(val, (int, float)):
+        return f"{val}em"
+    if cid in ("verticalOffset", "horizontalOffset") and isinstance(val, (int, float)):
+        return str(val)
+    if isinstance(val, bool):
+        return "1" if val else "0"
+    return str(val)
+

@@ -7,6 +7,7 @@
 import { mountLiveCaption } from './caption_render';
 import { mountTemplateSidebar } from './sidebar_mount';
 import { ensureBundledFonts, BUNDLED_GALLERY_FONTS, normFont, fetchGoogleFontCss } from './font_loader';
+import { renderParametersTab } from './param_panel';
 
 const TAG = '[TikTok]';
 
@@ -538,6 +539,8 @@ let tsPanel: HTMLDivElement | null = null;
 let tsContent: HTMLDivElement | null = null;
 let tsVisible = false;
 let tsMounted = false;
+let tsParamsHost: HTMLDivElement | null = null;
+let tsParamsRefresh: (() => void) | null = null;
 
 function tsMyNodes(): any[] {
   const app = (window as any).app;
@@ -557,6 +560,7 @@ function tsApplyToTab(name: string): void {
       (n as any).tscapsApply(name);
     }
   }
+  setTimeout(() => tsParamsRefresh && tsParamsRefresh(), 50);
 }
 function tsEnsurePanel(): HTMLDivElement {
   if (tsPanel) return tsPanel;
@@ -587,6 +591,7 @@ function tsEnsurePanel(): HTMLDivElement {
 }
 function tsShow(): void {
   tsEnsurePanel();
+  tsEnsureTabs();
   if (!tsContent) return;
   tsVisible = true;
   tsPanel!.style.display = 'block';
@@ -648,3 +653,46 @@ function tsSetupSidebar(): void {
   tryInit();
 }
 tsSetupSidebar();
+
+// ── Parameters tab wiring ───────────────────────────────────────────────
+// Add a second tab to the gallery panel: [Templates] [Parameters]. The
+// Parameters tab renders the active template's dynamic controls (typography /
+// alignment / effects / styleControls) via renderParametersTab, which writes
+// into the node's `template_overrides` JSON widget.
+function tsEnsureTabs(): void {
+  if (tsPanel && (tsPanel as any).__tabsReady) return;
+  const panel = tsPanel;
+  if (!panel) return;
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:absolute;top:0;left:0;right:0;height:36px;display:flex;align-items:center;gap:4px;padding:0 44px 0 10px;background:rgb(24 24 30);border-bottom:1px solid rgb(60 60 70);z-index:4;';
+  const tabTpl = document.createElement('button');
+  tabTpl.textContent = 'Templates';
+  const tabParam = document.createElement('button');
+  tabParam.textContent = 'Parameters';
+  const tabStyle = 'height:26px;padding:0 12px;border-radius:6px;border:1px solid rgb(60 60 70);background:rgb(36 36 46);color:rgb(204 204 204);cursor:pointer;font-size:12px;';
+  tabTpl.style.cssText = tabStyle;
+  tabParam.style.cssText = tabStyle;
+  const contentHost = tsContent; // existing gallery host
+  if (contentHost) contentHost.style.top = '36px';
+  const paramHost = document.createElement('div');
+  paramHost.className = 'tscaps-ui-root';
+  paramHost.style.cssText = 'position:absolute;inset:36px 0 0 0;overflow-y:auto;padding:12px;box-sizing:border-box;display:none;';
+  panel.appendChild(bar);
+  panel.appendChild(paramHost);
+  bar.appendChild(tabTpl);
+  bar.appendChild(tabParam);
+  const tsp = renderParametersTab(paramHost);
+  tsParamsHost = paramHost;
+  tsParamsRefresh = () => tsp.refresh();
+  tabTpl.onclick = () => { if (contentHost) contentHost.style.display = 'block'; paramHost.style.display = 'none'; };
+  tabParam.onclick = () => { if (contentHost) contentHost.style.display = 'none'; paramHost.style.display = 'block'; tsParamsRefresh && tsParamsRefresh(); };
+  (panel as any).__tabsReady = true;
+}
+
+// Re-render the Parameters tab whenever a template is applied (gallery select).
+const _tsApplyToTab = tsApplyToTab;
+tsApplyToTab = (name: string) => { _tsApplyToTab(name); setTimeout(() => tsParamsRefresh && tsParamsRefresh(), 50); };
+// Hook the panel show to ensure tabs exist.
+const _tsShow = tsShow;
+tsShow = () => { _tsShow(); tsEnsureTabs(); };
+

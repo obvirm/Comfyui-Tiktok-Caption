@@ -171,7 +171,11 @@ class TikTokCaptionNode:
                 "css": ("STRING", {"multiline": True, "default": DEFAULT_CSS}),
                 # template LAST so positional inputs (srt,w,h) keep mapping
                 "template": (template_names, {"default": "(none / custom)"}),
-            },
+                # Per-template dynamic overrides (typography/alignment/effects/
+                # styleControls) written by the sidebar Parameters panel as a
+                # JSON map of control-id → value. Merged on top of the template
+                # defaults at render time (like tscaps merges a sheet).
+                "template_overrides": ("STRING", {"multiline": True, "default": "{}"}),            },
             # Preview-only reference background image (never baked into frames).
             "optional": {
                 "preview_image": ("IMAGE",),
@@ -188,7 +192,8 @@ class TikTokCaptionNode:
                 horizontal_align, horizontal_offset, rotation, text_color,
                 highlight_color, outline, outline_color, outline_style,
                 split_by_speaker, split_by, max_letters, min_letters, lines_max,
-                lines_min, max_line_width, gap_free, css, template, preview_image=None):
+                lines_min, max_line_width, gap_free, css, template,
+                template_overrides, preview_image=None):
         import torch, numpy as np
         from PIL import Image
         # Self-heal stale/positional-mismatched numeric inputs.
@@ -212,6 +217,29 @@ class TikTokCaptionNode:
             if loaded:
                 css = loaded["css"]
                 inline_styles = dict(loaded["inlineStyles"])
+
+        # ── Merge per-template dynamic overrides (from the sidebar Parameters
+        # panel) on top of the template defaults. Supports typography keys
+        # (fontFamily/size/weight/letterSpacing/wordSpacing/lineSpacing/
+        # textAlign/textCase/italic/underline/strikethrough), alignment keys
+        # (verticalAlign/verticalOffset/horizontalAlign/horizontalOffset),
+        # effect toggles (effect:gap_free, effect:remove_punctuation, ...),
+        # and any styleControls id (--tscaps-<id>). Mirrors tscaps merging a
+        # sheet's style values over the template's own defaults.
+        overrides = {}
+        try:
+            if template_overrides and str(template_overrides).strip() not in ("", "{}"):
+                overrides = json.loads(str(template_overrides))
+        except Exception:
+            overrides = {}
+        if overrides:
+            from py import templates as _tplmod
+            inline_styles.update(_tplmod.apply_overrides(overrides, css if 'css' in dir() else ""))
+            # effect toggles also feed the engine transforms
+            eff = {k.split(":", 1)[1]: v for k, v in overrides.items() if k.startswith("effect:")}
+            if eff:
+                globals()["_tscaps_effect_overrides"] = eff
+        # font_family override from sidebar should win over template default
         from py.headless_render import _norm_font
         ff = str(font_family or "").strip()
         if ff and ff != "(template default)":
@@ -220,6 +248,8 @@ class TikTokCaptionNode:
             embed_font = norm
         else:
             embed_font = _norm_font(inline_styles.get("--tscaps-font-family", "") or "")
+        # Static node typography widgets still act as a global override on top
+        # of the template defaults + sidebar overrides (only when changed).
         try:
             fs = float(font_size)
         except Exception:
@@ -281,6 +311,15 @@ class TikTokCaptionNode:
             "horizontalAlign": horizontal_align,
             "horizontalOffset": float(horizontal_offset),
         }
+        # Merge per-template alignment overrides (from the sidebar panel).
+        if overrides:
+            for k in ("verticalAlign", "verticalOffset", "horizontalAlign", "horizontalOffset"):
+                if k in overrides:
+                    alignment[k] = overrides[k]
+        # Merge effect toggles into gap_free / layout where the engine supports.
+        eff = {k.split(":", 1)[1]: v for k, v in overrides.items() if k.startswith("effect:")}
+        if eff.get("gap_free"):
+            gap_free = True
         # Build the tscaps-native Layout map from the Scenes/Lines widgets.
         layout = {}
         if split_by_speaker:

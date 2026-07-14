@@ -51,6 +51,8 @@
 - 2026-07-06: Satori bundle gagal di browser - process is not defined, Buffer not found, yoga.wasm async load. Status: BELUM SELESAI, harus diperbaiki.
 - 2026-07-06: Letter-spacing tidak berfungsi di Canvas mode. Status: SEMENTARA pakai Canvas, harus ganti Satori.
 - 2026-07-08: ComfyUI v28+ (Vue frontend) gak support `app.registerExtension()` / `beforeRegisterNodeDef`. Fix: file JS di-load via WEB_DIRECTORY, pake LiteGraph hook langsung, gak perlu `import` statement.
+- 2026-07-14: Fixed missing template fonts (gallery "spread" + loki/Komika Axis not loading): added src/font_loader.ts with ensureBundledFonts() that injects @font-face data:URIs for all 35 bundled tscaps families into <head> once (called from mountLiveCaption + mountTemplateSidebar). normFont() strips " Variable" suffix for Google query; the registered face is rewritten back to "X Variable" so template vars resolve. Local non-Google fonts (Komika Axis) served from web/fonts/komika-axis.woff2 (copied from vendor/tscaps-ui/styles/fonts) and embedded via buildLocalFontFace; headless path uses py/headless_render._build_local_font_css(). Template var font-family now quoted in py/templates.py. Forced reflow of .word font-family after document.fonts.ready so late-loading web fonts replace the system fallback. Commit ecb8aaf, tag v1.0.2.
+- 2026-07-14: Known: other templates that use Google families still need network for first load (cached after). Only Komika Axis is fully offline (local file). If more templates show wrong font, check template.json typography.fontFamily is in BUNDLED_GALLERY_FONTS (font_loader.ts) — add if missing.
 
 ## Changelog
 
