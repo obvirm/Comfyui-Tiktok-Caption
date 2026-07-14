@@ -26,7 +26,9 @@ def _typography_to_vars(typ: dict) -> dict:
     """Map template.json typography → --tscaps-* CSS variables."""
     v = {}
     if "fontFamily" in typ:
-        v["--tscaps-font-family"] = typ["fontFamily"]
+        # Always quote multi-word families (e.g. 'Komika Axis') so the CSS var
+        # resolves to a valid font-family value when used in `var(...)`.
+        v["--tscaps-font-family"] = f"'{typ['fontFamily']}'"
     if "fontWeight" in typ:
         v["--tscaps-font-weight"] = str(typ["fontWeight"])
     if typ.get("italic"):
@@ -76,6 +78,9 @@ def _controls_to_vars(controls: list) -> dict:
         cid = c.get("id")
         if cid in id_map and "default" in c:
             val = c["default"]
+            if cid == "font-family":
+                # Quote multi-word family names.
+                val = f"'{val}'"
             if cid in ("font-size", "letter-spacing", "word-spacing", "line-spacing"):
                 val = f"{val}em" if cid != "font-size" else f"{val}cqh"
             if cid == "rotation":

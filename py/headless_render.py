@@ -93,6 +93,54 @@ def _build_google_font_css(family: str) -> str:
         return ""
 
 
+# Local font files shipped with the node (not on Google Fonts). Map the exact
+# family name the template stores in CSS → a same-origin URL we can embed.
+_LOCAL_FONTS = {
+    "Komika Axis": "/extensions/Comfyui-Caption-Live/fonts/komika-axis.woff2",
+}
+
+
+def _build_local_font_css(family: str) -> str:
+    """Embed a same-origin woff2 as a base64 data: URI @font-face."""
+    url = _LOCAL_FONTS.get(family)
+    if not url:
+        return ""
+    try:
+        # Resolve the same-origin URL to a local file path under the node.
+        if url.startswith("/extensions/Comfyui-Caption-Live/"):
+            rel = url[len("/extensions/Comfyui-Caption-Live/"):].lstrip("/")
+            # The extension serves WEB_DIRECTORY ("web") at this root, so the
+            # URL path is relative to the node root's web/ folder.
+            path = os.path.join(node_root, "web", rel)
+            if not os.path.isfile(path):
+                path = os.path.join(node_root, rel)
+        elif os.path.isabs(url):
+            path = url
+        else:
+            path = os.path.join(node_root, "web", url)
+        if not os.path.isfile(path):
+            return ""
+        with open(path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode("ascii")
+        return (
+            "@font-face{font-family:'%s';src:url(data:font/woff2;base64,%s) "
+            "format('woff2');font-weight:normal;font-style:normal;font-display:swap;}"
+            % (family, b64)
+        )
+    except Exception as e:
+        logger.warning(f"Failed to embed local font '{family}': {e}")
+        return ""
+
+
+def _build_font_css(family: str) -> str:
+    """Return embeddable @font-face CSS for a family: local first, else Google."""
+    if family in _LOCAL_FONTS:
+        local = _build_local_font_css(family)
+        if local:
+            return local
+    return _build_google_font_css(family)
+
+
 def render_frames(srt: str, css: str, width: int, height: int, inline_styles: dict = None,
                    alignment: dict = None, split_words_into_letters: bool = False,
                    text_case: str = "none", layout: dict = None,
@@ -111,7 +159,7 @@ def render_frames(srt: str, css: str, width: int, height: int, inline_styles: di
     font_css = ""
     ff = str(font_family or "").strip()
     if ff and ff != "(template default)":
-        font_css = _build_google_font_css(ff)
+        font_css = _build_font_css(ff)
     params = {
         "srt": srt, "css": css, "width": width, "height": height,
         "inlineStyles": inline_styles or {},

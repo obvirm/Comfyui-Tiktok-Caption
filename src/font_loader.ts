@@ -39,8 +39,12 @@ export async function fetchGoogleFontCss(family: string): Promise<string> {
       const resp = await fetch(`/api/caption/font-css?family=${encodeURIComponent(fam)}`);
       if (resp.ok) {
         const css = await resp.text();
-        fontCssCache.set(fam, css);
-        return css;
+        // Guard: the route may return empty/non-CSS (offline / error). Only
+        // accept it if it actually looks like @font-face CSS.
+        if (css && css.includes('@font-face')) {
+          fontCssCache.set(fam, css);
+          return css;
+        }
       }
     } catch { /* fall back to a direct Google fetch */ }
     // Fallback: fetch Google directly (its responses are CORS-enabled) and
@@ -91,6 +95,27 @@ export const BUNDLED_GALLERY_FONTS = [
   'Lobster', 'Lora Variable', 'Montserrat Variable', 'Playfair Display Variable',
   'Poppins', 'Righteous', 'VT323',
 ];
+
+// Local font files shipped with the node (not on Google Fonts). Map the exact
+// family name the template stores in CSS → a same-origin URL we can embed.
+const LOCAL_FONTS: Record<string, string> = {
+  'Komika Axis': '/extensions/Comfyui-Caption-Live/fonts/komika-axis.woff2',
+};
+
+/** Build an @font-face block for a LOCAL (same-origin) font file, inlined as a
+ *  base64 data: URI so it works inside the SVG foreignObject isolated context
+ *  too (no extra fetch). Returns '' if the file can't be read. */
+async function buildLocalFontFace(family: string, url: string): Promise<string> {
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) return '';
+    const buf = new Uint8Array(await resp.arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+    const b64 = btoa(bin);
+    return `@font-face{font-family:'${family}';src:url(data:font/woff2;base64,${b64}) format('woff2');font-weight:normal;font-style:normal;font-display:swap;}`;
+  } catch { return ''; }
+}
 /**
  * Inject @font-face data:URIs for every bundled family into <head> once, so the
  * gallery cards (and templates) resolve their --tscaps-font-family to the real
@@ -109,6 +134,12 @@ export async function ensureBundledFonts(families: string[]): Promise<void> {
     const norm = normFont(f);
     if (seen.has(norm)) continue;
     seen.add(norm);
+    // Local (same-origin) font shipped with the node — embed directly.
+    if (LOCAL_FONTS[f]) {
+      const localCss = await buildLocalFontFace(f, LOCAL_FONTS[f]);
+      if (localCss) parts.push(localCss);
+      continue;
+    }
     let css = await fetchGoogleFontCss(norm);
     if (!css) continue;
     // Templates keep the "X Variable" suffix in their --tscaps-font-family var,

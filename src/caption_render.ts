@@ -725,6 +725,17 @@ export async function mountLiveCaption(
     for (const [k, v] of Object.entries(vars)) el.style.setProperty(k, v);
   }
 
+  // Fonts may still be loading when we build; re-apply once they're ready so
+  // the computed font-family on .word resolves to the embedded face.
+  if (typeof document !== 'undefined' && (document as any).fonts?.ready) {
+    (document as any).fonts.ready.then(() => {
+      for (const b of built) {
+        // Force a style recompute by toggling a no-op property.
+        b.el.style.opacity = '1';
+      }
+    }).catch(() => {});
+  }
+
   function seek(t: number): void {
     for (const b of built) {
       const active = t >= b.seg.time.start && t <= b.seg.time.end;
@@ -743,6 +754,15 @@ export async function mountLiveCaption(
       for (const wr of b.words) {
         wr.el.className = wr.w.getCssClasses(t).join(' ');
         setVars(wr.el, wr.w.getCssVariables(t, { segTime: b.seg.time, indexInLine: wr.indexInLine }));
+        // The .word's font-family resolves through the inherited
+        // --tscaps-font-family CSS variable. If the web font finished loading
+        // AFTER this element was first laid out, Chromium may have cached the
+        // *fallback* (system) font and won't re-resolve the var until the
+        // element is forced to recompute styles. Re-applying the same
+        // font-family string flushes that cached fallback and picks up the
+        // now-ready embedded face.
+        const fam = wr.el.style.fontFamily;
+        wr.el.style.fontFamily = 'var(--tscaps-font-family, ' + (fam || 'system-ui') + ')';
       }
     }
   }
