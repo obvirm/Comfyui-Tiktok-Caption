@@ -18,7 +18,7 @@ current_dir = os.path.dirname(__file__)
 node_root = os.path.dirname(current_dir)
 CHILD_SCRIPT = os.path.join(current_dir, "_render_child.py")
 PY_EXE = sys.executable
-TMP = "C:/tmp"
+TMP = tempfile.gettempdir()
 
 # Cache inlined @font-face CSS (with data: URIs) per font family so we only
 # hit the network once per font, not on every render.
